@@ -320,12 +320,21 @@
         window.addEventListener('resize', resizeCanvas); resizeCanvas(); animateStars();
 
         const loadText = document.getElementById('loadText'), loadFill = document.getElementById('loadFill'), loadWrap = document.getElementById('loadLineWrap'), preloader = document.getElementById('preloader');
+        
         function simLoad() {
-            let increment = Math.random() * 0.4; // Velocidad de carga controlada
+            let increment = Math.random() * 0.4; 
             loadProgress += increment;
             if (loadProgress >= 100) {
                 loadProgress = 100; isExploding = true; preloader.classList.add('text-fade-out');
-                setTimeout(() => { preloader.classList.add('finished'); document.body.classList.add('loaded'); setTimeout(() => cancelAnimationFrame(animId), 2000); initNeuralVeil(); }, 800);
+                setTimeout(() => { 
+                    preloader.classList.add('finished'); 
+                    document.body.classList.add('loaded'); 
+                    setTimeout(() => cancelAnimationFrame(animId), 2000); 
+                    initNeuralVeil(); 
+                    
+                    // INTENTO DE AUTO-PLAY AL TERMINAR PRELOAD (Si el navegador lo permite por visita previa)
+                    tryAutoPlay(); 
+                }, 800);
             } else {
                 loadText.innerText = Math.floor(loadProgress) + '%';
                 loadWrap.style.width = Math.min(loadProgress * 3, 250) + 'px'; loadFill.style.width = loadProgress + '%';
@@ -334,7 +343,7 @@
         }
         setTimeout(() => requestAnimationFrame(simLoad), 500);
 
-        // --- 2. NEURAL VEIL (AR - POTENCIADO) ---
+        // --- 2. NEURAL VEIL ---
         const neuralCanvas = document.getElementById('neural-canvas');
         const nCtx = neuralCanvas.getContext('2d');
         let nW, nH, nodes = [];
@@ -342,33 +351,13 @@
         function initNeuralVeil() { resizeNeural(); window.addEventListener('resize', resizeNeural); window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; }); createNodes(); animateNeural(); }
         function resizeNeural() { nW = neuralCanvas.width = window.innerWidth; nH = neuralCanvas.height = window.innerHeight; }
         class Node {
-            constructor() {
-                this.x = Math.random() * nW; this.y = Math.random() * nH;
-                this.vx = (Math.random() - 0.5) * 0.5; this.vy = (Math.random() - 0.5) * 0.5;
-                // Grosor Dinámico Configurable (Puntos)
-                this.size = Math.random() * 3 + 2; 
-                this.color = Math.random() > 0.7 ? 'rgba(0, 240, 255,' : 'rgba(255, 255, 255,'; 
-            }
+            constructor() { this.x = Math.random() * nW; this.y = Math.random() * nH; this.vx = (Math.random() - 0.5) * 0.5; this.vy = (Math.random() - 0.5) * 0.5; this.size = Math.random() * 3 + 2; this.color = Math.random() > 0.7 ? 'rgba(0, 240, 255,' : 'rgba(255, 255, 255,'; }
             update() { this.x += this.vx; this.y += this.vy; if(this.x < 0 || this.x > nW) this.vx *= -1; if(this.y < 0 || this.y > nH) this.vy *= -1; }
             draw() {
                 let dx = mouse.x - this.x; let dy = mouse.y - this.y; let dist = Math.sqrt(dx*dx + dy*dy);
                 if(dist < 250) {
-                    let alpha = (250 - dist) / 250;
-                    nCtx.beginPath(); nCtx.arc(this.x, this.y, this.size, 0, Math.PI*2);
-                    nCtx.fillStyle = this.color + (alpha * 0.8) + ')'; 
-                    nCtx.shadowBlur = 10; nCtx.shadowColor = this.color.includes('0, 240') ? '#00F0FF' : '#FFFFFF';
-                    nCtx.fill(); nCtx.shadowBlur = 0;
-                    nodes.forEach(other => {
-                        let odx = this.x - other.x; let ody = this.y - other.y; let odist = Math.sqrt(odx*odx + ody*ody);
-                        if(odist < 120) {
-                            nCtx.beginPath(); nCtx.moveTo(this.x, this.y); nCtx.lineTo(other.x, other.y);
-                            nCtx.strokeStyle = 'rgba(255, 255, 255,' + (alpha * (1 - odist/120) * 0.6) + ')';
-                            // Grosor Dinámico Configurable (Líneas)
-                           // nCtx.lineWidth = 0.8; 
-                            nCtx.lineWidth = 2.5 - (odist / 120); 
-                            nCtx.stroke();
-                        }
-                    });
+                    let alpha = (250 - dist) / 250; nCtx.beginPath(); nCtx.arc(this.x, this.y, this.size, 0, Math.PI*2); nCtx.fillStyle = this.color + (alpha * 0.8) + ')'; nCtx.shadowBlur = 10; nCtx.shadowColor = this.color.includes('0, 240') ? '#00F0FF' : '#FFFFFF'; nCtx.fill(); nCtx.shadowBlur = 0;
+                    nodes.forEach(other => { let odx = this.x - other.x; let ody = this.y - other.y; let odist = Math.sqrt(odx*odx + ody*ody); if(odist < 120) { nCtx.beginPath(); nCtx.moveTo(this.x, this.y); nCtx.lineTo(other.x, other.y); nCtx.strokeStyle = 'rgba(255, 255, 255,' + (alpha * (1 - odist/120) * 0.6) + ')'; /*nCtx.lineWidth = 0.8;*/ nCtx.lineWidth = 2.5 - (odist / 120); nCtx.stroke(); } });
                 }
             }
         }
@@ -394,34 +383,72 @@
             l.addEventListener('click', () => { menu.classList.remove('active'); scrollInd.classList.remove('hidden'); });
         });
 
-        // --- 4. AUDIO CONTROL (INTEGRADO AL VIDEO) ---
+        // --- 4. AUDIO INTELLIGENCE (NUEVO SISTEMA) ---
         const audioBtn = document.getElementById('audioBtn');
-        const video = document.getElementById('bg-video'); // Selector del Video de Fondo
+        const video = document.getElementById('bg-video');
 
-        audioBtn.addEventListener('click', () => {
+        // Función para hacer Fade In suave del audio
+        function fadeAudioIn() {
+            if (!video.muted) return; // Si ya suena, no hacer nada
+            
+            video.muted = false;
+            video.volume = 0;
+            audioBtn.classList.add('active');
+            
+            // Guardar preferencia en memoria del navegador
+            localStorage.setItem('ululato_sound_pref', 'on');
+
+            let fade = setInterval(() => {
+                if (video.volume < 0.9) {
+                    video.volume += 0.05;
+                } else {
+                    clearInterval(fade);
+                }
+            }, 100);
+        }
+
+        // Lógica del Botón
+        audioBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Evitar que dispare el click global
             if (video.muted) {
-                // Activar Sonido (Unmute)
-                video.muted = false;
-                video.volume = 0; // Iniciar en 0
-                audioBtn.classList.add('active');
-
-                // Fade In Effect (Subida gradual)
-                let vol = 0;
-                let fadeInterval = setInterval(() => {
-                    if (vol < 0.9) {
-                        vol += 0.05;
-                        video.volume = vol;
-                    } else {
-                        clearInterval(fadeInterval);
-                    }
-                }, 100);
+                fadeAudioIn();
             } else {
-                // Desactivar Sonido (Mute)
                 video.muted = true;
                 audioBtn.classList.remove('active');
+                localStorage.setItem('ululato_sound_pref', 'off');
             }
         });
 
+        // 1. INTENTO DE AUTOPLAY BASADO EN MEMORIA (Al cargar)
+        function tryAutoPlay() {
+            const pref = localStorage.getItem('ululato_sound_pref');
+            if (pref === 'on') {
+                // El navegador puede bloquear esto si no hay interacción previa
+                video.muted = false;
+                video.play().catch(error => {
+                    // Si falla, volvemos a mute y esperamos clic
+                    video.muted = true;
+                    console.log("Autoplay bloqueado por navegador, esperando interacción.");
+                });
+                if (!video.muted) audioBtn.classList.add('active');
+            }
+        }
+
+        // 2. ACTIVACIÓN POR PRIMERA INTERACCIÓN GLOBAL (El Truco)
+        // Cualquier clic en el documento activará el sonido si está apagado
+        function unlockAudio() {
+            if (video.muted) {
+                fadeAudioIn();
+            }
+            // Una vez activado, quitamos este "detector" para que no moleste
+            document.removeEventListener('click', unlockAudio);
+        }
+        
+        // Escuchamos cualquier clic en la página para activar el sonido
+        document.addEventListener('click', unlockAudio);
+
+
+        // Cursor Logic
         const dot = document.querySelector('.cursor-dot'), circle = document.querySelector('.cursor-circle');
         let cx=0, cy=0;
         window.addEventListener('mousemove', e => { 
