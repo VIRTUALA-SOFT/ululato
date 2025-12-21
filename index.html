@@ -220,9 +220,9 @@
 <body>
 
     <!-- AUDIO FILE -->
-    <audio id="bg-audio" loop>
+   <!--<audio id="bg-audio" loop>
         <source src="https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=meditation-impulse-30741.mp3" type="audio/mpeg">
-    </audio>
+    </audio>-->
 
     <!-- PRELOADER -->
     <div class="preloader" id="preloader">
@@ -405,10 +405,32 @@
             l.addEventListener('click', () => { menu.classList.remove('active'); scrollInd.classList.remove('hidden'); });
         });
 
-        const audioBtn = document.getElementById('audioBtn'), bgAudio = document.getElementById('bg-audio');
+        // --- 4. AUDIO CONTROL (INTEGRADO AL VIDEO) ---
+        const audioBtn = document.getElementById('audioBtn');
+        const video = document.getElementById('bg-video'); // Selector del Video de Fondo
+
         audioBtn.addEventListener('click', () => {
-            if(bgAudio.paused) { bgAudio.play(); bgAudio.volume = 0; audioBtn.classList.add('active'); let fade = setInterval(() => { if(bgAudio.volume < 0.8) bgAudio.volume += 0.05; else clearInterval(fade); }, 100); }
-            else { bgAudio.pause(); audioBtn.classList.remove('active'); }
+            if (video.muted) {
+                // Activar Sonido (Unmute)
+                video.muted = false;
+                video.volume = 0; // Iniciar en 0
+                audioBtn.classList.add('active');
+
+                // Fade In Effect (Subida gradual)
+                let vol = 0;
+                let fadeInterval = setInterval(() => {
+                    if (vol < 0.9) {
+                        vol += 0.05;
+                        video.volume = vol;
+                    } else {
+                        clearInterval(fadeInterval);
+                    }
+                }, 100);
+            } else {
+                // Desactivar Sonido (Mute)
+                video.muted = true;
+                audioBtn.classList.remove('active');
+            }
         });
 
         const dot = document.querySelector('.cursor-dot'), circle = document.querySelector('.cursor-circle');
