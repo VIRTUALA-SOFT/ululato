@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ULULATO | Panoramic Vision</title>
+    <title>ULULATO | The Living Origin</title>
     
     <!-- FUENTES PREMIUM -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -38,7 +38,7 @@
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: var(--black); z-index: 9999;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
-            transition: transform 1.5s var(--ease-lux), opacity 1s ease;
+            transition: transform 1.8s var(--ease-lux), opacity 1s ease;
         }
         .preloader.finished { transform: translateY(-100%); }
         .preloader.text-fade-out .loader-content { opacity: 0; transform: scale(1.1); }
@@ -88,12 +88,12 @@
         }
         @keyframes rotate3D { 0% { transform: rotateY(0deg); } 100% { transform: rotateY(360deg); } }
 
-        /* --- 5. HERO TEXT (PANORAMIC LAYOUT) --- */
+        /* --- 5. HERO TEXT --- */
         .hero {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             pointer-events: none; z-index: 10;
-            padding: 0 5%; /* Margen de seguridad */
+            padding: 0 5%;
         }
         h1 { 
             text-align: center; color: var(--white); 
@@ -101,50 +101,23 @@
             width: 100%;
         }
         
-        /* TÍTULO EN UNA SOLA LÍNEA */
-        .hero-title-container {
-            display: flex; 
-            justify-content: center; 
-            gap: 1.5rem; /* Espacio entre SOMOS y ORIGEN */
-            width: 100%;
-        }
-
+        .hero-title-container { display: flex; justify-content: center; gap: 1.5rem; width: 100%; }
         .hero-title { 
-            display: inline-block;
-            font-family: var(--font-serif); 
-            font-weight: 400; font-style: italic;
-            font-size: 6vw; /* Tamaño fluido */
-            line-height: 1;
-            letter-spacing: -0.02em;
-            white-space: nowrap; /* FUERZA UNA LINEA */
-            transition: text-shadow 0.1s;
+            display: inline-block; font-family: var(--font-serif); font-weight: 400; font-style: italic;
+            font-size: 6vw; line-height: 1; letter-spacing: -0.02em; white-space: nowrap; transition: text-shadow 0.1s;
         }
-        
-        /* SUBTÍTULO EN UNA SOLA LÍNEA */
         .hero-sub { 
-            display: block; 
-            font-family: var(--font-sans); 
-            font-size: 0.9vw; /* Tamaño relativo al ancho para que siempre quepa */
-            letter-spacing: 0.4em; 
-            margin-top: 25px; 
-            text-transform: uppercase; 
-            color: var(--gold); 
-            text-shadow: 0 2px 10px rgba(0,0,0,0.8);
-            white-space: nowrap; /* FUERZA UNA LINEA */
-            width: 100%;
-            text-align: center;
+            display: block; font-family: var(--font-sans); font-size: 0.8vw; letter-spacing: 0.4em; 
+            margin-top: 25px; text-transform: uppercase; color: var(--gold); text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+            white-space: nowrap; width: 100%; text-align: center;
         }
 
-        /* --- 6. ELEMENTOS UI --- */
         .nav-bar, .hero, .scroll-indicator, .audio-toggle { opacity: 0; transition: opacity 1.5s ease 1s, transform 1.5s var(--ease-lux) 1s; transform: translateY(30px); }
         body.loaded .nav-bar, body.loaded .hero, body.loaded .scroll-indicator, body.loaded .audio-toggle { opacity: 1; transform: translateY(0); }
 
+        /* --- 6. ELEMENTOS UI --- */
         .menu-trigger { 
-            position: relative; background: rgba(0,0,0,0.2); 
-            border-radius: 50px; border: 1px solid rgba(255,255,255,0.3); 
-            padding: 0; width: 150px; height: 44px; display: flex; justify-content: center; align-items: center; cursor: none; pointer-events: auto; 
-            font-family: var(--font-sans); font-size: 0.75rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--white); 
-            backdrop-filter: blur(5px);
+            position: relative; background: rgba(0,0,0,0.2); border-radius: 50px; border: 1px solid rgba(255,255,255,0.3); padding: 0; width: 150px; height: 44px; display: flex; justify-content: center; align-items: center; cursor: none; pointer-events: auto; font-family: var(--font-sans); font-size: 0.75rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--white); backdrop-filter: blur(5px);
         }
         .trigger-text { position: relative; z-index: 2; transition: letter-spacing 0.5s var(--ease-lux), color 0.3s; text-shadow: 0 2px 5px rgba(0,0,0,0.5); }
         .trigger-rings { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
@@ -202,26 +175,41 @@
         @keyframes spinNumber { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
 
-      
+       /* 1. Punto Central */
         .cursor-dot {
             position: fixed;
             top: 0;
             left: 0;
             width: 8px;
             height: 8px;
-            background: var(--gold); /* Color Oro Sólido */
+            background: var(--gold); /* Oro puro */
             border-radius: 50%;
             pointer-events: none;
-            z-index: 10000; /* Z-Index muy alto para estar siempre encima */
-            transform: translate(-50%, -50%); 
-            box-shadow: 0 0 10px rgba(212, 175, 55, 0.5); /* Añadido un pequeño brillo para lujo */
+            z-index: 10001; /* Capa ultra superior (encima del anillo) */
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.8); /* Brillo intenso */
         }
-        .cursor-circle { position: fixed; top: 0; left: 0; width: 40px; height: 40px; border: 1px solid rgba(255,255,255,0.4); border-radius: 50%; pointer-events: none; z-index: 999; transform: translate(-50%, -50%); transition: width 0.3s, height 0.3s, background 0.3s; }
+        
+        /* 2. Anillo Exterior */
+        .cursor-circle {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 40px;
+            height: 40px;
+            /* Borde dorado semitransparente para que se vea siempre sobre negro */
+            border: 1px solid rgba(212, 175, 55, 0.5); 
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10000; /* Capa superior (encima del video y menús) */
+            transform: translate(-50%, -50%);
+            transition: width 0.3s, height 0.3s, background 0.3s, border-color 0.3s;
+        }
 
         @media (max-width: 768px) {
             .nav-bar { padding: 30px; }
-            .hero-title { font-size: 9vw; } /* Ajuste para móvil para mantener 1 linea */
-            .hero-sub { font-size: 0.6rem; letter-spacing: 0.1em; white-space: normal; line-height: 1.4; } /* En móvil permitimos wrap si es necesario para leer */
+            .hero-title { font-size: 9vw; }
+            .hero-sub { font-size: 0.6rem; letter-spacing: 0.1em; white-space: normal; line-height: 1.4; }
             .menu-link { font-size: 2.2rem; flex-direction: column; gap: 10px; align-items: flex-start; }
             .scroll-indicator { display: none; }
             .audio-toggle { bottom: 30px; right: 30px; }
@@ -231,11 +219,6 @@
     </style>
 </head>
 <body>
-
-    <!-- AUDIO FILE -->
-   <!--<audio id="bg-audio" loop>
-        <source src="https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=meditation-impulse-30741.mp3" type="audio/mpeg">
-    </audio>-->
 
     <!-- PRELOADER -->
     <div class="preloader" id="preloader">
@@ -247,8 +230,9 @@
         </div>
     </div>
 
-    <!-- VIDEO BACKGROUND -->
+    <!-- VIDEO BACKGROUND (SOUND INTEGRATED) -->
     <div class="video-container">
+        <!-- El video comienza silenciado (muted) para permitir el autoplay del navegador -->
         <video id="bg-video" autoplay loop muted playsinline>
             <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/ULULATOIA.mp4" type="video/mp4">
         </video>
@@ -290,7 +274,7 @@
         </ul>
     </div>
 
-    <!-- HERO TEXT (ONE LINE PANORAMIC) -->
+    <!-- HERO TEXT -->
     <main class="hero">
         <h1>
             <div class="hero-title-container">
@@ -314,30 +298,15 @@
     <div class="cursor-circle"></div>
 
     <script>
-        // --- 1. PRELOADER (GRADUAL ACCELERATION) ---
+        // --- 1. PRELOADER ---
         const canvas = document.getElementById('loader-canvas');
         const ctx = canvas.getContext('2d');
         let width, height, stars = [], loadProgress = 0, isExploding = false;
         function resizeCanvas() { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; initStars(); }
         class Star {
             constructor() { this.x = Math.random() * width - width / 2; this.y = Math.random() * height - height / 2; this.z = Math.random() * width; this.color = Math.random() > 0.5 ? '#D4AF37' : '#00F0FF'; this.size = Math.random() * 2; }
-            update() { 
-                // ACELERACIÓN GRADUAL BASADA EN EL PROGRESO
-                // Al 0% speed = 2. Al 100% speed = 52.
-                let speed = 2 + (loadProgress * 0.5);
-                if(isExploding) speed = 100; // Warp final
-
-                this.z -= speed; 
-                if (this.z <= 0) { this.z = width; this.x = Math.random() * width - width / 2; this.y = Math.random() * height - height / 2; } 
-            }
-            draw() { 
-                let x = (this.x / this.z) * width + width / 2; let y = (this.y / this.z) * height + height / 2; 
-                let r = (1 - this.z / width) * this.size * 2; 
-                // Estiramiento visual también gradual
-                let trail = isExploding ? 5 : (1 - this.z / width) * (loadProgress * 0.5); 
-                
-                ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - (x - width/2) * (trail * 0.01), y - (y - height/2) * (trail * 0.01)); ctx.strokeStyle = this.color; ctx.lineWidth = r; if (isExploding) ctx.globalAlpha = 0.5; ctx.stroke(); ctx.globalAlpha = 1; 
-            }
+            update() { let speed = 2 + (loadProgress * 0.5); if(isExploding) speed = 100; this.z -= speed; if (this.z <= 0) { this.z = width; this.x = Math.random() * width - width / 2; this.y = Math.random() * height - height / 2; } }
+            draw() { let x = (this.x / this.z) * width + width / 2; let y = (this.y / this.z) * height + height / 2; let r = (1 - this.z / width) * this.size * 2; let trail = isExploding ? 5 : (1 - this.z / width) * (loadProgress * 0.5); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - (x - width/2) * (trail * 0.01), y - (y - height/2) * (trail * 0.01)); ctx.strokeStyle = this.color; ctx.lineWidth = r; if (isExploding) ctx.globalAlpha = 0.5; ctx.stroke(); ctx.globalAlpha = 1; }
         }
         function initStars() { stars = []; for(let i=0; i<400; i++) stars.push(new Star()); }
         let animId;
@@ -346,10 +315,8 @@
 
         const loadText = document.getElementById('loadText'), loadFill = document.getElementById('loadFill'), loadWrap = document.getElementById('loadLineWrap'), preloader = document.getElementById('preloader');
         function simLoad() {
-            // CARGA MAS RÁPIDA (Incremento 1.5 en vez de 0.4)
-            let increment = Math.random() * 0.4; 
+            let increment = Math.random() * 0.4; // Velocidad de carga controlada
             loadProgress += increment;
-            
             if (loadProgress >= 100) {
                 loadProgress = 100; isExploding = true; preloader.classList.add('text-fade-out');
                 setTimeout(() => { preloader.classList.add('finished'); document.body.classList.add('loaded'); setTimeout(() => cancelAnimationFrame(animId), 2000); initNeuralVeil(); }, 800);
@@ -361,7 +328,7 @@
         }
         setTimeout(() => requestAnimationFrame(simLoad), 500);
 
-        // --- 2. NEURAL VEIL (AR) ---
+        // --- 2. NEURAL VEIL (AR - POTENCIADO) ---
         const neuralCanvas = document.getElementById('neural-canvas');
         const nCtx = neuralCanvas.getContext('2d');
         let nW, nH, nodes = [];
@@ -372,6 +339,7 @@
             constructor() {
                 this.x = Math.random() * nW; this.y = Math.random() * nH;
                 this.vx = (Math.random() - 0.5) * 0.5; this.vy = (Math.random() - 0.5) * 0.5;
+                // Grosor Dinámico Configurable (Puntos)
                 this.size = Math.random() * 3 + 2; 
                 this.color = Math.random() > 0.7 ? 'rgba(0, 240, 255,' : 'rgba(255, 255, 255,'; 
             }
@@ -389,7 +357,9 @@
                         if(odist < 120) {
                             nCtx.beginPath(); nCtx.moveTo(this.x, this.y); nCtx.lineTo(other.x, other.y);
                             nCtx.strokeStyle = 'rgba(255, 255, 255,' + (alpha * (1 - odist/120) * 0.6) + ')';
-                            nCtx.lineWidth =  2.5 - (odist / 120);  
+                            // Grosor Dinámico Configurable (Líneas)
+                           // nCtx.lineWidth = 0.8; 
+                            nCtx.lineWidth = 2.5 - (odist / 120); 
                             nCtx.stroke();
                         }
                     });
