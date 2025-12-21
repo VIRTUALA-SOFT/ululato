@@ -554,27 +554,69 @@
             l.addEventListener('mouseleave', () => { atmosphere.style.opacity = '0'; atmosphere.style.transform = 'scale(1)'; });
         });
 
-        // CORRECCIÓN AUDIO: Lógica directa de clic para forzar reproducción
+        // --- 4. AUDIO INTELLIGENCE (NUEVO SISTEMA) ---
         const audioBtn = document.getElementById('audioBtn');
         const video = document.getElementById('bg-video');
-        
+
+        // Función para hacer Fade In suave del audio
+        function fadeAudioIn() {
+            if (!video.muted) return; // Si ya suena, no hacer nada
+            
+            video.muted = false;
+            video.volume = 0;
+            audioBtn.classList.add('active');
+            
+            // Guardar preferencia en memoria del navegador
+            localStorage.setItem('ululato_sound_pref', 'on');
+
+            let fade = setInterval(() => {
+                if (video.volume < 0.9) {
+                    video.volume += 0.05;
+                } else {
+                    clearInterval(fade);
+                }
+            }, 100);
+        }
+
+        // Lógica del Botón
         audioBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
+            e.stopPropagation(); // Evitar que dispare el click global
             if (video.muted) {
-                // ACTIVAR
-                video.muted = false;
-                video.volume = 1.0;
-                audioBtn.classList.add('active');
-                localStorage.setItem('ululato_sound_pref', 'on');
-                // Si el navegador pausó el autoplay, lo forzamos ahora que hay interacción
-                if(video.paused) video.play();
+                fadeAudioIn();
             } else {
-                // DESACTIVAR
                 video.muted = true;
                 audioBtn.classList.remove('active');
                 localStorage.setItem('ululato_sound_pref', 'off');
             }
         });
+
+        // 1. INTENTO DE AUTOPLAY BASADO EN MEMORIA (Al cargar)
+        function tryAutoPlay() {
+            const pref = localStorage.getItem('ululato_sound_pref');
+            if (pref === 'on') {
+                // El navegador puede bloquear esto si no hay interacción previa
+                video.muted = false;
+                video.play().catch(error => {
+                    // Si falla, volvemos a mute y esperamos clic
+                    video.muted = true;
+                    console.log("Autoplay bloqueado por navegador, esperando interacción.");
+                });
+                if (!video.muted) audioBtn.classList.add('active');
+            }
+        }
+
+        // 2. ACTIVACIÓN POR PRIMERA INTERACCIÓN GLOBAL (El Truco)
+        // Cualquier clic en el documento activará el sonido si está apagado
+        function unlockAudio() {
+            if (video.muted) {
+                fadeAudioIn();
+            }
+            // Una vez activado, quitamos este "detector" para que no moleste
+            document.removeEventListener('click', unlockAudio);
+        }
+        
+        // Escuchamos cualquier clic en la página para activar el sonido
+        document.addEventListener('click', unlockAudio);
 
         const dot = document.querySelector('.cursor-dot'), circle = document.querySelector('.cursor-circle');
         let cx=0, cy=0;
