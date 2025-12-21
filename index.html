@@ -202,7 +202,20 @@
         @keyframes spinNumber { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
 
-        .cursor-dot { position: fixed; top: 0; left: 0; width: 8px; height: 8px; background: var(--gold); border-radius: 50%; pointer-events: none; z-index: 1000; transform: translate(-50%, -50%); mix-blend-mode: difference; }
+      
+        .cursor-dot {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 8px;
+            height: 8px;
+            background: var(--gold); /* Color Oro Sólido */
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10000; /* Z-Index muy alto para estar siempre encima */
+            transform: translate(-50%, -50%); 
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.5); /* Añadido un pequeño brillo para lujo */
+        }
         .cursor-circle { position: fixed; top: 0; left: 0; width: 40px; height: 40px; border: 1px solid rgba(255,255,255,0.4); border-radius: 50%; pointer-events: none; z-index: 999; transform: translate(-50%, -50%); transition: width 0.3s, height 0.3s, background 0.3s; }
 
         @media (max-width: 768px) {
@@ -334,7 +347,7 @@
         const loadText = document.getElementById('loadText'), loadFill = document.getElementById('loadFill'), loadWrap = document.getElementById('loadLineWrap'), preloader = document.getElementById('preloader');
         function simLoad() {
             // CARGA MAS RÁPIDA (Incremento 1.5 en vez de 0.4)
-            let increment = Math.random() * 1.5; 
+            let increment = Math.random() * 0.4; 
             loadProgress += increment;
             
             if (loadProgress >= 100) {
