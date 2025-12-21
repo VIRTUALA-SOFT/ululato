@@ -38,9 +38,12 @@
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: var(--black); z-index: 9999;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
-            transition: transform 1.8s var(--ease-lux), opacity 1s ease;
+            transition: opacity 1.5s ease-in-out;
         }
-        .preloader.finished { transform: translateY(-100%); }
+        .preloader.finished {
+            opacity: 0;
+            pointer-events: none; /* Importante para poder dar click abajo */
+        }
         .preloader.text-fade-out .loader-content { opacity: 0; transform: scale(1.1); }
         
         #loader-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; transition: opacity 1s ease; }
@@ -55,7 +58,9 @@
         #bg-video { 
             width: 100%; height: 100%; 
             object-fit: cover; object-position: center;
-            transform: scale(1.2); transition: transform 2.5s var(--ease-lux), opacity 1s ease; opacity: 0; 
+            transform: scale(1.1); 
+            transition: transform 3s ease-out, opacity 2s ease; 
+            opacity: 0; 
         }
         .video-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.25); z-index: 1; }
         body.loaded #bg-video { transform: scale(1); opacity: 1; }
@@ -112,8 +117,8 @@
             white-space: nowrap; width: 100%; text-align: center;
         }
 
-        .nav-bar, .hero, .scroll-indicator, .audio-toggle { opacity: 0; transition: opacity 1.5s ease 1s, transform 1.5s var(--ease-lux) 1s; transform: translateY(30px); }
-        body.loaded .nav-bar, body.loaded .hero, body.loaded .scroll-indicator, body.loaded .audio-toggle { opacity: 1; transform: translateY(0); }
+        .nav-bar, .hero, .scroll-indicator, .audio-toggle { opacity: 0; transition: opacity 2s ease 0.5s; }
+        body.loaded .nav-bar, body.loaded .hero, body.loaded .scroll-indicator, body.loaded .audio-toggle { opacity: 1; }
 
         /* --- 6. ELEMENTOS UI --- */
         .menu-trigger { 
@@ -180,8 +185,8 @@
             position: fixed;
             top: 0;
             left: 0;
-            width: 10px;
-            height: 10px;
+            width: 12px;
+            height: 12px;
             background: var(--gold); /* Oro puro */
             border-radius: 50%;
             pointer-events: none;
@@ -191,19 +196,20 @@
         }
         
         /* 2. Anillo Exterior */
-        .cursor-circle {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 45px;
-            height: 45px;
-            /* Borde dorado semitransparente para que se vea siempre sobre negro */
-            border: 1.5px solid rgba(212, 175, 55, 0.5); 
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 10008; /* Capa superior (encima del video y menús) */
-            transform: translate(-50%, -50%);
-            transition: width 0.3s, height 0.3s, background 0.3s, border-color 0.3s;
+        .cursor-circle { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 48px; 
+            height: 48px; 
+            /* Borde ORO fijo, no blanco */
+            border: 1px solid rgba(212, 175, 55, 0.6); 
+            border-radius: 50%; 
+            pointer-events: none; 
+            z-index: 99999; /* Capa máxima para asegurar que flote sobre todo */
+            transform: translate(-50%, -50%); 
+            transition: width 0.3s, height 0.3s, background 0.3s, border-color 0.3s; 
+            will-change: transform; /* Optimización para que no parpadee */
         }
 
         @media (max-width: 768px) {
@@ -305,7 +311,7 @@
         function resizeCanvas() { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; initStars(); }
         class Star {
             constructor() { this.x = Math.random() * width - width / 2; this.y = Math.random() * height - height / 2; this.z = Math.random() * width; this.color = Math.random() > 0.5 ? '#D4AF37' : '#00F0FF'; this.size = Math.random() * 2; }
-            update() { let speed = 2 + (loadProgress * 0.5); if(isExploding) speed = 100; this.z -= speed; if (this.z <= 0) { this.z = width; this.x = Math.random() * width - width / 2; this.y = Math.random() * height - height / 2; } }
+            update() { let speed = 2 + (loadProgress * 2.0); if(isExploding) speed = 100; this.z -= speed; if (this.z <= 0) { this.z = width; this.x = Math.random() * width - width / 2; this.y = Math.random() * height - height / 2; } }
             draw() { let x = (this.x / this.z) * width + width / 2; let y = (this.y / this.z) * height + height / 2; let r = (1 - this.z / width) * this.size * 2; let trail = isExploding ? 5 : (1 - this.z / width) * (loadProgress * 0.5); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - (x - width/2) * (trail * 0.01), y - (y - height/2) * (trail * 0.01)); ctx.strokeStyle = this.color; ctx.lineWidth = r; if (isExploding) ctx.globalAlpha = 0.5; ctx.stroke(); ctx.globalAlpha = 1; }
         }
         function initStars() { stars = []; for(let i=0; i<400; i++) stars.push(new Star()); }
@@ -418,7 +424,29 @@
 
         const dot = document.querySelector('.cursor-dot'), circle = document.querySelector('.cursor-circle');
         let cx=0, cy=0;
-        window.addEventListener('mousemove', e => { dot.style.left = e.clientX+'px'; dot.style.top = e.clientY+'px'; const c = e.target.closest('a, button'); if(c) { circle.style.width='60px'; circle.style.height='60px'; circle.style.borderColor='var(--gold)'; } else { circle.style.width='40px'; circle.style.height='40px'; circle.style.borderColor='rgba(255,255,255,0.4)'; } });
+        window.addEventListener('mousemove', e => { 
+            // Mover el punto central
+            dot.style.left = e.clientX + 'px'; 
+            dot.style.top = e.clientY + 'px'; 
+            
+            // Detectar si estamos sobre un enlace o botón
+            const c = e.target.closest('a, button, .menu-trigger'); 
+            
+            if(c) { 
+                // ESTADO HOVER (Activo)
+                circle.style.width = '60px'; 
+                circle.style.height = '60px'; 
+                circle.style.backgroundColor = 'rgba(212, 175, 55, 0.1)'; // Fondo dorado muy tenue
+                circle.style.borderColor = 'var(--gold)'; // Borde Oro Sólido
+            } else { 
+                // ESTADO NORMAL (Inactivo)
+                circle.style.width = '40px'; 
+                circle.style.height = '40px'; 
+                circle.style.backgroundColor = 'transparent'; 
+                // AQUÍ ESTABA EL ERROR: Antes era blanco, ahora es Oro semitransparente
+                circle.style.borderColor = 'rgba(212, 175, 55, 0.6)'; 
+            } 
+        });
         function ac() { cx+=(lastX-cx)*0.15; cy+=(mouse.y-cy)*0.15; circle.style.left=cx+'px'; circle.style.top=cy+'px'; requestAnimationFrame(ac); } ac();
     </script>
 </body>
