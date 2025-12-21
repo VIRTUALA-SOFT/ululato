@@ -376,7 +376,7 @@
                         if(odist < 120) {
                             nCtx.beginPath(); nCtx.moveTo(this.x, this.y); nCtx.lineTo(other.x, other.y);
                             nCtx.strokeStyle = 'rgba(255, 255, 255,' + (alpha * (1 - odist/120) * 0.6) + ')';
-                            nCtx.lineWidth =  1.2 - (odist / 120);  
+                            nCtx.lineWidth =  2 - (odist / 120);  
                             nCtx.stroke();
                         }
                     });
