@@ -338,7 +338,7 @@
     document.addEventListener("DOMContentLoaded", () => {
 
         // --- LÓGICA DE BUCLE PERSONALIZADO (LOOP DESDE SEGUNDO 3) ---
-const LOOP_START_TIME = 3; // El segundo exacto donde quieres que reinicie
+const LOOP_START_TIME = 2; // El segundo exacto donde quieres que reinicie
 
 document.querySelectorAll('.hover-video').forEach(video => {
     // 1. Escuchamos cuando el video termina
@@ -465,11 +465,9 @@ document.querySelectorAll('.hover-video').forEach(video => {
                 activeHoverColor = color; // Marcamos quien manda
 
                 const vid = document.getElementById(hoverVideoId);
-                const txt = document.getElementById(textId);
-
-                  const vid = document.getElementById(hoverVideoId);
+                const txt = document.getElementById(textId);                 
     
-    // --- AGREGAR ESTO: SI EL VIDEO YA TERMINÓ, REINICIAR DESDE 0 (O 3) ---
+    // ---  SI EL VIDEO YA TERMINÓ, REINICIAR DESDE 0 (O 3) ---
     // Esto asegura que si vuelves a entrar, no se quede negro o congelado al final.
     if (vid.ended || vid.paused) {
         // Opción A: Siempre desde el principio absoluto al entrar
@@ -499,7 +497,7 @@ document.querySelectorAll('.hover-video').forEach(video => {
 
             // Función Maestra: DESACTIVAR (Ocultar si nos vamos)
             function deactivateState(hoverVideoId, textId, color, relatedTarget) {
-                // TRUCO PRO: Si nos movemos hacia el texto o hacia la cinta del mismo color, NO APAGAMOS
+                // Si nos movemos hacia el texto o hacia la cinta del mismo color, NO APAGAMOS
                 if (relatedTarget && (relatedTarget.id === textId || relatedTarget.dataset.color === color)) {
                     return; 
                 }
