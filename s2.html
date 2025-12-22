@@ -100,12 +100,12 @@
         <div class="video-container">
             <!-- 1. INTRO -->
             <video id="vid-intro" class="active" muted playsinline preload="auto">
-                <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/Tejido.mp4" type="video/mp4">
+                <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/Tejido.mp4" type="video/mp4">
             </video>
 
             <!-- 2. LOOP (Bucle de las cintas) -->
             <video id="vid-loop" class="hidden" loop muted playsinline preload="auto">
-                <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/Tejido2.mp4" type="video/mp4">
+                <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/Tejido2.mp4" type="video/mp4">
             </video>
 
             <!-- 3. TRANSICIÓN (Source dinámico) -->
@@ -150,7 +150,7 @@
         document.addEventListener("DOMContentLoaded", () => {
             
             // --- CONFIGURACIÓN ---
-            const videoPathPrefix = ""; // Si los videos están en una carpeta, pon: "assets/videos/"
+            const videoPathPrefix = "https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/"; // Si los videos están en una carpeta, pon: "assets/videos/"
             
             // --- REFERENCIAS DOM ---
             const loader = document.getElementById('loader');
@@ -218,7 +218,7 @@
                 interactionLayer.style.pointerEvents = 'none';
 
                 // Definir fuente del video de transición
-                // Estructura esperada: "https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/TransitionCintaYellow.mp4"
+                // Estructura esperada: "https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/TransitionCintaYellow.mp4"
                 const videoFile = `${videoPathPrefix}TransitionCinta${colorName}.mp4`;
                 vidTrans.src = videoFile;
                 vidTrans.load();
