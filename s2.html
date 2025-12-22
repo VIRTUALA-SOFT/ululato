@@ -7,97 +7,102 @@
     
     <!-- GSAP (Core Animation Engine) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+       <!-- Fuente Premium (Inter) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;600&display=swap" rel="stylesheet">
 
-    <style>
+  <style>
         /* --- RESET & BASE --- */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { 
             width: 100%; height: 100%; 
             background-color: #000; 
-            overflow: hidden; /* Evita scroll durante la experiencia */
-            font-family: sans-serif;
+            overflow: hidden; 
+            font-family: 'Inter', sans-serif;
         }
 
         /* --- LOADER --- */
         #loader {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #000; z-index: 999;
-            display: flex; justify-content: center; align-items: center;
-            color: #fff; text-transform: uppercase; letter-spacing: 2px; font-size: 12px;
-            transition: opacity 0.5s ease;
-            pointer-events: none;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            color: #fff; pointer-events: none; transition: opacity 0.5s ease;
         }
+        .loader-text { letter-spacing: 4px; font-size: 12px; text-transform: uppercase; margin-top: 15px; }
 
-        /* --- ESCENARIO PRINCIPAL --- */
+        /* --- ESCENARIO --- */
         .hero-immersive {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
+            position: relative; width: 100vw; height: 100vh;
         }
 
         .video-container {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
         }
 
-        /* --- CAPA DE VIDEO --- */
+        /* --- VIDEOS --- */
         video {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            object-fit: cover; /* Mantiene la inmersión sin deformar */
-            opacity: 0;
-            transition: opacity 0.6s ease; /* Crossfade suave nativo + GSAP helper */
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            object-fit: cover; opacity: 0;
+            transition: opacity 0.6s ease;
             will-change: opacity;
         }
-
-        video.active {
-            opacity: 1;
-            z-index: 2;
+        video.active { opacity: 1; z-index: 2; }
+        video.hidden { opacity: 0; z-index: 1; }
+        
+        /* Videos Hover (Capa 3) */
+        .hover-video {
+            opacity: 0; z-index: 3; transition: none; /* GSAP controla esto */
         }
 
-        video.hidden {
-            opacity: 0;
-            z-index: 1;
+        /* --- CAPA DE TEXTOS (MENÚ) --- */
+        .text-overlay-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 20; /* Por encima de todo */
+            pointer-events: none; /* Dejar pasar clics a menos que sea un texto activo */
         }
 
-        /* --- CAPA DE INTERACCIÓN (SVG INVISIBLE) --- */
+        .menu-label {
+            position: absolute;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+            font-size: 1.5rem; /* 24px */
+            cursor: pointer;
+            opacity: 0; /* Oculto por defecto */
+            pointer-events: auto; /* El texto sí recibe clics */
+            
+            /* Efecto visual de texto */
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            mix-blend-mode: difference; /* Truco Pro para legibilidad sobre cualquier color */
+            
+            /* Transición suave para el hover del propio texto */
+            transition: transform 0.3s ease, letter-spacing 0.3s ease;
+        }
+
+        .menu-label:hover {
+            transform: scale(1.05);
+            letter-spacing: 4px; /* Expansión elegante */
+        }
+
+        /* Posiciones de los textos (AJUSTA ESTO A TU DISEÑO) */
+        /* Sugerencia: Ubícalos cerca de donde está la cinta en el video */
+        #text-yellow { top: 20%; left: 15%; }
+        #text-blue   { top: 20%; right: 15%; }
+        #text-red    { bottom: 20%; right: 20%; }
+        #text-green  { bottom: 20%; left: 20%; }
+
+        /* --- CAPA DE INTERACCIÓN (SVG) --- */
         .interaction-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 10;
-            /* Se mantiene oculta hasta que arranca el loop */
-            visibility: hidden; 
+            z-index: 10; visibility: hidden;
         }
-
-        svg {
-            width: 100%; height: 100%;
-            /* IMPORTANTE: preserveAspectRatio asegura que el SVG se estire igual que el video (object-fit: cover) */
-            /* Si el video es 16:9, usar 'xMidYMid slice' es crucial */
-        }
-
+        svg { width: 100%; height: 100%; }
         .interaction-zone {
-            fill: transparent; /* Totalmente invisible */
-            cursor: pointer;
+            fill: transparent; 
+            cursor: pointer; 
             pointer-events: auto;
-            transition: fill 0.3s ease;
         }
 
-        /* Feedback visual sutil al usuario (Opcional) */
-        /* Esto ayuda a descubrir que es interactivo sin romper la inmersión */
-        .interaction-zone:hover {
-            fill: rgba(255, 255, 255, 0.05); 
-        }
-
-        /* Clase base para los videos de hover */
-        .hover-video {
-            opacity: 0;
-            z-index: 3; /* Encima del loop (z-index: 2) */
-            transition: none; /* Dejaremos que GSAP maneje la transición */
-        }
-        
-        /* Ajuste de capas */
-        #vid-loop.active { z-index: 2; }
-        #vid-transition.active { z-index: 5; } /* La transición final siempre arriba */
-                
     </style>
 </head>
 <body>
@@ -119,7 +124,7 @@
                 <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/Tejido2.mp4" type="video/mp4">
             </video>
 
-            <!-- === CAPA DE VIDEOS HOVER === -->
+            <!-- === 3. CAPA DE VIDEOS HOVER === -->
         <!-- Están ocultos (opacity: 0) y pausados por defecto -->
         
         <video id="hover-yellow" class="video-layer hover-video" loop muted playsinline preload="auto">
@@ -146,7 +151,16 @@
             </video>
         </div>
 
-        <!-- CAPA DE INTERACCIÓN SVG -->
+
+         <!-- 5. CAPA DE TEXTOS (Menú Flotante) -->
+        <div class="text-overlay-layer">
+            <div id="text-yellow" class="menu-label" data-color="Yellow">Marketplace</div>
+            <div id="text-blue"   class="menu-label" data-color="Blue">Cursos Virtuales</div>
+            <div id="text-red"    class="menu-label" data-color="Red">Georeferenciación</div>
+            <div id="text-green"  class="menu-label" data-color="Green">Comunidad</div>
+        </div>
+        
+        <!-- 6. CAPA DE INTERACCIÓN SVG -->
         <!-- Ajusta el viewBox a la resolución nativa de tu video (ej: 1920 1080) -->
         <div class="interaction-layer" id="interaction-layer">
             <svg viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
@@ -155,22 +169,22 @@
                 
                 <!-- CINTA AMARILLA -->
                 <path id="zone-yellow" class="interaction-zone" 
-                      data-color="Yellow" data-url="https://virtuala-soft.github.io/earth/dsc/wayuu/amarilla.html"
+                      data-color="Yellow" data-url="https://virtuala-soft.github.io/earth/dsc/wayuu/amarilla.html" data-text-id="text-yellow" data-hover-id="hover-yellow"
                       d="M1414,412c-9-1-277,8-277,8s-307-14-307-14c0,0-293.57,8-293.29,14s-48.71,7-48.71,13,167,99,167,99l200,90,157,84,97,49,24,14-11,36s-21,41-27,41-145-45.56-144-44.78-119-40.22-119-40.22l-152-86-182-95-85-48-45-86-34-82,22.55-22.55h66.2l62.25-23.45h121.95l221.05,18,113-4s133,11,138,16,172,5,172,5l113,8h71.17l-21.17,51Z"></path>
                 
                 <!-- CINTA AZUL -->
                 <path id="zone-blue" class="interaction-zone" 
-                      data-color="Blue" data-url="https://virtuala-soft.github.io/earth/dsc/wayuu/azul.html"
+                      data-color="Blue" data-url="https://virtuala-soft.github.io/earth/dsc/wayuu/azul.html" data-text-id="text-blue" data-hover-id="hover-blue"
                       d="M747,319l69.05,69.05,157.95,94.95,138,110,130,118,20.44,20.44s-95.44-15.44-102.44-15.44-96-55-96-55l-87-67-168.21-168.21-49.79-73.79-76-74-24,8,42,74,105,138,102,93,108,95,137,81,98,33,49,9,16-38-5-81-119.66-142.5-145.34-112.5-155-121-104-63-112-14-10,30,82,52Z"></path>
 
                 <!-- CINTA ROJA -->
                 <path id="zone-red" class="interaction-zone" 
-                      data-color="Red" data-url="https://virtuala-soft.github.io/earth/dsc/wayuu/roja.html"
+                      data-color="Red" data-url="https://virtuala-soft.github.io/earth/dsc/wayuu/roja.html" data-text-id="text-red" data-hover-id="hover-red"
                       d="M648,814l-13-71s11-40,18-41,71-62,71-62l147-124,181-169,158-133,75-42,44,67v30.84l-128,105.16-76.15,76.15-94.85,83.85-170,138-138,106-18,45-35,12-21-22Z"></path>
 
                 <!-- CINTA VERDE -->
                 <path id="zone-green" class="interaction-zone" 
-                      data-color="Green" data-url="https://virtuala-soft.github.io/earth/dsc/wayuu/verde.html"
+                      data-color="Green" data-url="https://virtuala-soft.github.io/earth/dsc/wayuu/verde.html" data-text-id="text-green" data-hover-id="hover-green"
                       d="M811,820l142-74s197-80,208-85,189-100,189-100l128-86-269-37-138-24-188,32-171,36h-109.03l-37.97,1-11-45,91.38-24s217.62-29,217.62-29,183-10,179-9,206.32-1,206.32-1l144.68,7,99,3,45,19,41,59,16,53-13,53-53,40-106,62-217,104-110,51-121,40-94,28-58-28-24-36,13-10Z"></path>
 
             </svg>
@@ -191,8 +205,10 @@
             const vidTrans = document.getElementById('vid-transition');
             const interactionLayer = document.getElementById('interaction-layer');
             const zones = document.querySelectorAll('.interaction-zone');
+             const labels = document.querySelectorAll('.menu-label');
 
             let isTransitioning = false; // Flag para evitar dobles clics
+            let activeHoverColor = null; // Para rastrear qué color está activo
 
             // --- 1. INICIALIZACIÓN ---
             // Esperamos a que el intro tenga suficiente data para reproducir
@@ -261,106 +277,141 @@
                 }
             });
 
-            // --- 3. INTERACCIÓN (CLICS) ---
-
-            const loopVideo = document.getElementById('vid-loop'); 
+           // --- 2. LOGICA DE INTERACCIÓN UNIFICADA (Ribbon + Texto) ---
             
-            zones.forEach(zone => {
+            // Función Maestra: Activar Estado Hover
+            function activateState(color, hoverVideoId, textId) {
+                if (isTransitioning || activeHoverColor === color) return;
+                activeHoverColor = color;
 
-                 // 1. Obtener el ID del video hover asociado a esta zona
-                    const hoverVideoId = zone.dataset.hoverId;
-                    const hoverVideo = document.getElementById(hoverVideoId);
-                
-                    // EVENTO: ENTRAR (HOVER)
-                    zone.addEventListener('mouseenter', () => {
-                        // Evitar conflictos si ya se está yendo a otra página
-                        if (isTransitioning || !hoverVideo) return;
-                
-                        // OPCIONAL: Sincronización de Tiempo (Nivel Dios)
-                        // Si el video de hover es la misma animación que el fondo pero con brillo:
-                        // Igualamos el tiempo para que encajen perfectos.
-                        if (loopVideo.readyState > 0) {
-                            hoverVideo.currentTime = loopVideo.currentTime;
-                        }
-                
-                        // Reproducir video
-                        hoverVideo.play();
-                
-                        // Animación GSAP (Fade In rápido)
-                        gsap.to(hoverVideo, {
-                            opacity: 1,
-                            duration: 0.4,
-                            ease: "power2.out"
-                        });
-                    });
-                
-                    // EVENTO: SALIR (HOVER OUT)
-                    zone.addEventListener('mouseleave', () => {
-                        if (!hoverVideo) return;
-                
-                        // Animación GSAP (Fade Out)
-                        gsap.to(hoverVideo, {
-                            opacity: 0,
-                            duration: 0.4,
-                            ease: "power2.out",
-                            onComplete: () => {
-                                // Pausar video para ahorrar CPU/Batería
-                                hoverVideo.pause();
-                            }
-                        });
-                    });
-                                
-                zone.addEventListener('click', () => {
-                    if (isTransitioning) return;
-                    
-                    const color = zone.dataset.color; // Ej: "Yellow"
-                    const targetUrl = zone.dataset.url;
-                    
-                    triggerTransition(color, targetUrl);
-                });
-            });
+                const vid = document.getElementById(hoverVideoId);
+                const txt = document.getElementById(textId);
 
-            // --- 4. LÓGICA DE TRANSICIÓN ---
-            function triggerTransition(colorName, url) {
+                // Sincronizar video (Seamless)
+                if (vidLoop.readyState > 0) vid.currentTime = vidLoop.currentTime;
+                vid.play();
+
+                // Animación ENTRADA (GSAP)
+                gsap.to(vid, { opacity: 1, duration: 0.5, ease: "power2.out" });
+                
+                // Texto: Slide Up + Fade In
+                gsap.fromTo(txt, 
+                    { y: 20, opacity: 0 },
+                    { y: 0, opacity: 1, duration: 0.4, ease: "back.out(1.7)" }
+                );
+            }
+
+            // Función Maestra: Desactivar Estado Hover
+            function deactivateState(color, hoverVideoId, textId) {
+                // Pequeño delay para permitir que el mouse salte de la cinta al texto sin apagar todo
+                setTimeout(() => {
+                    // Solo apagamos si el usuario NO está interactuando con el mismo color
+                    if (activeHoverColor !== color) { 
+                        const vid = document.getElementById(hoverVideoId);
+                        const txt = document.getElementById(textId);
+
+                        // Animación SALIDA
+                        gsap.to(vid, { 
+                            opacity: 0, duration: 0.5, ease: "power2.out", 
+                            onComplete: () => vid.pause() 
+                        });
+                        
+                        gsap.to(txt, { y: 10, opacity: 0, duration: 0.3 });
+                    }
+                }, 50); // 50ms de tolerancia (Puente de interacción)
+            }
+
+            // Función Maestra: Click / Transición
+            function triggerTransition(color, url) {
+                if (isTransitioning) return;
                 isTransitioning = true;
-                
-                // Desactivar interacción inmediatamente
-                interactionLayer.style.pointerEvents = 'none';
 
-                // Definir fuente del video de transición
-                // Estructura esperada: "https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/TransitionCintaYellow.mp4"
-                const videoFile = `${videoPathPrefix}TransitionCinta${colorName}.mp4`;
-                vidTrans.src = videoFile;
+                // Bloquear todo
+                document.body.style.cursor = 'wait';
+                
+                // Cargar video transición
+                vidTrans.src = `${ASSET_PATH}TransitionCinta${color}.mp4`;
                 vidTrans.load();
 
-                // Cuando el video de transición esté listo
                 vidTrans.oncanplaythrough = () => {
                     vidTrans.play();
-
-                    // Switch visual Loop -> Transición
-                    vidLoop.classList.remove('active');
-                    vidLoop.classList.add('hidden'); // Opcional: pausar vidLoop aquí para ahorrar CPU
-
+                    
+                    // Ocultar textos y capas anteriores
+                    gsap.to(".menu-label", { opacity: 0, duration: 0.2 });
+                    
+                    // Mostrar transición
                     vidTrans.classList.remove('hidden');
                     vidTrans.classList.add('active');
+                    
+                    // Optimización: Pausar fondo
+                    vidLoop.pause(); 
                 };
 
-                // --- 5. FIN Y REDIRECCIÓN ---
                 vidTrans.onended = () => {
-                    // Fade out a negro (o blanco) antes de cambiar de página
-                    gsap.to(vidTrans, {
-                        opacity: 0,
-                        duration: 0.8,
-                        onComplete: () => {
-                            window.location.href = url;
-                        }
-                    });
+                    gsap.to(document.body, { opacity: 0, duration: 1, onComplete: () => {
+                        window.location.href = url;
+                    }});
                 };
             }
 
-            // --- OPTIMIZACIÓN ---
-            // Aseguramos que los videos ocultos se pausen para no consumir recursos
-            // (Excepto durante los crossfades cortos)
+            // --- 3. VINCULACIÓN DE EVENTOS ---
+
+            // A) Eventos en las CINTAS (SVG)
+            zones.forEach(zone => {
+                const color = zone.dataset.color;
+                const url = zone.dataset.url;
+                const vidId = zone.dataset.hoverId;
+                const txtId = zone.dataset.textId;
+
+                zone.addEventListener('mouseenter', () => activateState(color, vidId, txtId));
+                
+                zone.addEventListener('mouseleave', (e) => {
+                    // Verificamos si nos estamos moviendo hacia el texto correspondiente
+                    // Si el "relatedTarget" (hacia donde va el mouse) es el texto, NO desactivamos.
+                    const related = e.relatedTarget;
+                    if (related && related.id === txtId) {
+                        return; // Cancelar apagado, mantenemos vivo el estado
+                    }
+                    activeHoverColor = null;
+                    deactivateState(color, vidId, txtId);
+                });
+
+                zone.addEventListener('click', () => triggerTransition(color, url));
+            });
+
+            // B) Eventos en los TEXTOS
+            labels.forEach(label => {
+                const color = label.dataset.color;
+                // Buscamos la zona asociada para obtener datos (esto se podría optimizar con un mapa)
+                const zone = document.querySelector(`.interaction-zone[data-color="${color}"]`);
+                const url = zone.dataset.url;
+                const vidId = zone.dataset.hoverId;
+                const txtId = label.id;
+
+                // Mantener estado activo si entramos al texto directo (raro) o venimos de la cinta
+                label.addEventListener('mouseenter', () => {
+                    activateState(color, vidId, txtId);
+                });
+
+                label.addEventListener('mouseleave', (e) => {
+                    // Si volvemos a la cinta, no apagar
+                    /* Nota Técnica: Como la cinta está "debajo" visualmente del texto (z-index), 
+                       a veces el relatedTarget es el SVG container. */
+                    activeHoverColor = null;
+                    deactivateState(color, vidId, txtId);
+                });
+
+                label.addEventListener('click', () => triggerTransition(color, url));
+            });
+
+            // Helper visual
+            function switchVideo(from, to) {
+                from.classList.remove('active');
+                from.classList.add('hidden');
+                to.classList.remove('hidden');
+                to.classList.add('active');
+            }
+
         });
     </script>
 </body>
