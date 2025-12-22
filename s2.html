@@ -115,40 +115,40 @@
 
 /* --- ESTILO PREMIUM: GLASSMORPHISM + MOVING GOLD BORDER --- */
 .menu-label {
-    /* POSICIONAMIENTO */
-    position: absolute;
-    cursor: pointer;
-    pointer-events: auto;
-    opacity: 0;
-    transform: translateY(20px);
+    /* Posición inicial reseteada (JS la moverá) */
+    position: fixed; /* Fixed para que siga al mouse relativo a la ventana */
+    top: 0; 
+    left: 0;
     
-    /* TIPOGRAFÍA */
+    /* CRUCIAL: pointer-events: none */
+    /* Como el texto sigue al mouse, si recibe clics, bloquearía al video de abajo.
+       Al poner 'none', el clic "atraviesa" el texto y le da a la cinta, 
+       que es lo que queremos. */
+    pointer-events: none; 
+    
+    /* Estética (Mantenemos tu estilo dorado) */
     font-family: 'Cinzel', serif;
-    color: #ffffff; /* Oro pálido para el texto */
+    color: #ffffff;
     font-size: 1rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 2px;
     
-    /* ESTRUCTURA PARA EL BORDE ANIMADO */
-    position: absolute;
-    overflow: hidden; /* Recorta el brillo sobrante */
-    border-radius: 12px; /* Redondeo externo */
-    padding: 14px 28px; /* Espacio interno */
+    /* Glassmorphism & Gold Border */
+    background: rgba(40, 44, 52, 0.4); 
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 12px;
+    padding: 12px 24px;
     
-    /* Importante: Quitamos bordes y fondos directos aquí porque los pseudo-elementos lo harán */
-    background: transparent; 
-    border: none;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); /* Sombra profunda */
-
-    /* Transición suave para movimiento */
-    transition: transform 0.3s ease, letter-spacing 0.3s ease, box-shadow 0.3s ease;
+    /* Oculto por defecto */
+    opacity: 0;
+    z-index: 100; /* Muy arriba */
     
-    /* Aseguramos que el texto esté encima de los fondos */
-    z-index: 20;
+    /* Importante: Transform se usará para moverlo, no lo definas aquí */
     display: flex; justify-content: center; align-items: center;
 }
-
+    
 /* 1. LA SERPIENTE DORADA (El fondo que gira) */
 .menu-label::before {
     content: '';
@@ -417,6 +417,16 @@
 
           // Opcional: Si no usas cursor personalizado, comenta la siguiente línea
         const customCursor = document.querySelector('.custom-cursor'); 
+
+          // Configuración de alto rendimiento para seguir al mouse
+        const labelSetters = {};
+        labels.forEach(lbl => {
+            labelSetters[lbl.id] = {
+                x: gsap.quickSetter(lbl, "x", "px"), // Optimización "Senior"
+                y: gsap.quickSetter(lbl, "y", "px")
+            };
+        });
+        
         let isTransitioning = false; // Flag para evitar dobles clics
         let activeHoverColor = null; // Para evitar conflictos de animaciones
 
@@ -537,6 +547,12 @@
 
                 // Animación Video
                 gsap.to(vid, { opacity: 1, duration: 0.4, ease: "power2.out" });
+
+                   // Posicionar texto instantáneamente donde está el mouse (+25px de margen)
+                if(labelSetters[textId]) {
+                    labelSetters[textId].x(mouseX + 25);
+                    labelSetters[textId].y(mouseY + 25);
+                }
                 
                 // Animación Texto (Slide Up + Fade In)
                 gsap.to(txt, { 
@@ -588,11 +604,20 @@
                     // 1. Ejecutar la lógica normal (Video + Texto menú)
                     activateState(hoverVideoId, textId, color);
 
-                    // 2. NUEVO: Ocultar el Título Guía (#hero-cta) al tocar una cinta
+                    // 2. Ocultar el Título Guía (#hero-cta) al tocar una cinta
                     // 'overwrite: auto' cancela animaciones previas para que no parpadee
                     gsap.to("#hero-cta", { opacity: 0, duration: 0.5, overwrite: "auto" });
                 });
-                
+
+                   // 2. MOVER (Actualiza la posición del texto en tiempo real)
+                zone.addEventListener('mousemove', (e) => {
+                    // Solo movemos si el color activo es el actual (optimización)
+                    if (activeHoverColor === color && labelSetters[textId]) {
+                        labelSetters[textId].x(e.clientX + 25);
+                        labelSetters[textId].y(e.clientY + 25);
+                    }
+                });
+                  
                 // Salir de cinta (Igual que antes)
                 zone.addEventListener('mouseleave', (e) => deactivateState(hoverVideoId, textId, color, e.relatedTarget));
 
@@ -600,25 +625,7 @@
                 zone.addEventListener('click', () => triggerTransition(color, url));
             });
 
-            // --- APLICAR LOGICA A LOS TEXTOS (LABELS) ---
-            // Esto permite que el usuario vaya de la cinta al texto sin que se apague
-            labels.forEach(label => {
-                const color = label.dataset.color;
-                // Buscamos la zona correspondiente para obtener IDs
-                const zone = document.querySelector(`.interaction-zone[data-color="${color}"]`);
-                const hoverVideoId = zone.dataset.hoverId;
-                const textId = label.id;
-                const url = zone.dataset.url;
-
-                // Entrar en texto
-                label.addEventListener('mouseenter', () => activateState(hoverVideoId, textId, color));
-
-                // Salir de texto
-                label.addEventListener('mouseleave', (e) => deactivateState(hoverVideoId, textId, color, e.relatedTarget));
-
-                // Clic en texto
-                label.addEventListener('click', () => triggerTransition(color, url));
-            });
+          
         // --- 4. LÓGICA DE TRANSICIÓN ---
         function triggerTransition(colorName, url) {
             isTransitioning = true;
