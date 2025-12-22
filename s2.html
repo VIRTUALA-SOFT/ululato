@@ -202,6 +202,7 @@
          const labels = document.querySelectorAll('.menu-label');
 
         let isTransitioning = false; // Flag para evitar dobles clics
+        let activeHoverColor = null; // Para evitar conflictos de animaciones
 
         // --- 1. INICIALIZACIÓN ---
         // Esperamos a que el intro tenga suficiente data para reproducir
@@ -270,65 +271,98 @@
             }
         });
 
-        // --- 3. INTERACCIÓN (CLICS) ---
-
-        const loopVideo = document.getElementById('vid-loop'); 
         
-        zones.forEach(zone => {
-
-             // 1. Obtener el ID del video hover asociado a esta zona
-                const hoverVideoId = zone.dataset.hoverId;
-                const hoverVideo = document.getElementById(hoverVideoId);
+            // --- 3. LÓGICA PREMIUM DE INTERACCIÓN (VIDEO + TEXTO) ---
             
-                // EVENTO: ENTRAR (HOVER)
-                zone.addEventListener('mouseenter', () => {
-                    // Evitar conflictos si ya se está yendo a otra página
-                    if (isTransitioning || !hoverVideo) return;
-            
-                    // OPCIONAL: Sincronización de Tiempo (Nivel Dios)
-                    // Si el video de hover es la misma animación que el fondo pero con brillo:
-                    // Igualamos el tiempo para que encajen perfectos.
-                    if (loopVideo.readyState > 0) {
-                        hoverVideo.currentTime = loopVideo.currentTime;
-                    }
-            
-                    // Reproducir video
-                    hoverVideo.play();
-            
-                    // Animación GSAP (Fade In rápido)
-                    gsap.to(hoverVideo, {
-                        opacity: 1,
-                        duration: 0.4,
-                        ease: "power2.out"
-                    });
-                });
-            
-                // EVENTO: SALIR (HOVER OUT)
-                zone.addEventListener('mouseleave', () => {
-                    if (!hoverVideo) return;
-            
-                    // Animación GSAP (Fade Out)
-                    gsap.to(hoverVideo, {
-                        opacity: 0,
-                        duration: 0.4,
-                        ease: "power2.out",
-                        onComplete: () => {
-                            // Pausar video para ahorrar CPU/Batería
-                            hoverVideo.pause();
-                        }
-                    });
-                });
-                            
-            zone.addEventListener('click', () => {
+            // Función Maestra: ACTIVAR (Mostrar Video y Texto)
+            function activateState(hoverVideoId, textId, color) {
                 if (isTransitioning) return;
-                
-                const color = zone.dataset.color; // Ej: "Yellow"
-                const targetUrl = zone.dataset.url;
-                
-                triggerTransition(color, targetUrl);
-            });
-        });
+                activeHoverColor = color; // Marcamos quien manda
 
+                const vid = document.getElementById(hoverVideoId);
+                const txt = document.getElementById(textId);
+
+                // Sincronizar video
+                if (vidLoop.readyState > 0) vid.currentTime = vidLoop.currentTime;
+                vid.play();
+
+                // Animación Video
+                gsap.to(vid, { opacity: 1, duration: 0.4, ease: "power2.out" });
+                
+                // Animación Texto (Slide Up + Fade In)
+                gsap.to(txt, { 
+                    y: 0, 
+                    opacity: 1, 
+                    duration: 0.5, 
+                    ease: "back.out(1.7)",
+                    overwrite: "auto"
+                });
+            }
+
+            // Función Maestra: DESACTIVAR (Ocultar si nos vamos)
+            function deactivateState(hoverVideoId, textId, color, relatedTarget) {
+                // TRUCO PRO: Si nos movemos hacia el texto o hacia la cinta del mismo color, NO APAGAMOS
+                if (relatedTarget && (relatedTarget.id === textId || relatedTarget.dataset.color === color)) {
+                    return; 
+                }
+
+                activeHoverColor = null;
+                const vid = document.getElementById(hoverVideoId);
+                const txt = document.getElementById(textId);
+
+                // Ocultar Video
+                gsap.to(vid, { 
+                    opacity: 0, 
+                    duration: 0.4, 
+                    ease: "power2.out", 
+                    onComplete: () => vid.pause() 
+                });
+
+                // Ocultar Texto
+                gsap.to(txt, { 
+                    y: 20, 
+                    opacity: 0, 
+                    duration: 0.3, 
+                    overwrite: "auto"
+                });
+            }
+
+            // --- APLICAR LOGICA A LAS CINTAS (ZONES) ---
+            zones.forEach(zone => {
+                const hoverVideoId = zone.dataset.hoverId;
+                const textId = zone.dataset.textId;
+                const color = zone.dataset.color;
+                const url = zone.dataset.url;
+
+                // Entrar en cinta
+                zone.addEventListener('mouseenter', () => activateState(hoverVideoId, textId, color));
+                
+                // Salir de cinta
+                zone.addEventListener('mouseleave', (e) => deactivateState(hoverVideoId, textId, color, e.relatedTarget));
+
+                // Clic en cinta
+                zone.addEventListener('click', () => triggerTransition(color, url));
+            });
+
+            // --- APLICAR LOGICA A LOS TEXTOS (LABELS) ---
+            // Esto permite que el usuario vaya de la cinta al texto sin que se apague
+            labels.forEach(label => {
+                const color = label.dataset.color;
+                // Buscamos la zona correspondiente para obtener IDs
+                const zone = document.querySelector(`.interaction-zone[data-color="${color}"]`);
+                const hoverVideoId = zone.dataset.hoverId;
+                const textId = label.id;
+                const url = zone.dataset.url;
+
+                // Entrar en texto
+                label.addEventListener('mouseenter', () => activateState(hoverVideoId, textId, color));
+
+                // Salir de texto
+                label.addEventListener('mouseleave', (e) => deactivateState(hoverVideoId, textId, color, e.relatedTarget));
+
+                // Clic en texto
+                label.addEventListener('click', () => triggerTransition(color, url));
+            });
         // --- 4. LÓGICA DE TRANSICIÓN ---
         function triggerTransition(colorName, url) {
             isTransitioning = true;
