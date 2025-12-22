@@ -265,19 +265,23 @@
     <!-- === CAPA DE VIDEOS HOVER === -->
 <!-- Están ocultos (opacity: 0) y pausados por defecto -->
 
-<video id="hover-yellow" class="video-layer hover-video"  muted playsinline preload="auto">
+<video id="hover-yellow" class="video-layer hover-video"  muted playsinline preload="auto" data-loop-start="3" 
+       data-loop-end="4">
     <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/HoverCintaYellow.mp4" type="video/mp4">
 </video>
 
-<video id="hover-blue" class="video-layer hover-video"  muted playsinline preload="auto">
+<video id="hover-blue" class="video-layer hover-video"  muted playsinline preload="auto" data-loop-start="3" 
+       data-loop-end="4">
     <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/HoverCintaBlue.mp4" type="video/mp4">
 </video>
 
-<video id="hover-red" class="video-layer hover-video"  muted playsinline preload="auto">
+<video id="hover-red" class="video-layer hover-video"  muted playsinline preload="auto" data-loop-start="3" 
+       data-loop-end="4">
     <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/HoverCintaRed.mp4" type="video/mp4">
 </video>
 
-<video id="hover-green" class="video-layer hover-video"  muted playsinline preload="auto">
+<video id="hover-green" class="video-layer hover-video"  muted playsinline preload="auto" data-loop-start="3" 
+       data-loop-end="4">
     <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/HoverCintaGreen.mp4" type="video/mp4">
 </video>
 <!-- =================================== -->
@@ -303,6 +307,8 @@
     <div class="mouse-icon"></div> <!-- Opcional: ícono de mouse/dedo -->
 </div>
 
+    <div class="custom-cursor"></div>
+    
 <!-- CAPA DE INTERACCIÓN SVG -->
 <!-- Ajusta el viewBox a la resolución nativa de tu video (ej: 1920 1080) -->
 <div class="interaction-layer" id="interaction-layer">
@@ -334,23 +340,24 @@
 </div>
 
     </section>
+    
 <script>
     document.addEventListener("DOMContentLoaded", () => {
 
         // --- LÓGICA DE BUCLE PERSONALIZADO (LOOP DESDE SEGUNDO 3) ---
-const LOOP_START_TIME = 3; // El segundo exacto donde quieres que reinicie
-
-document.querySelectorAll('.hover-video').forEach(video => {
-    // 1. Escuchamos cuando el video termina
-    video.addEventListener('ended', () => {
-        // 2. Rebobinamos al segundo deseado
-        video.currentTime = LOOP_START_TIME;
+        //const LOOP_START_TIME = 3; // El segundo exacto donde quieres que reinicie
         
-        // 3. Volvemos a reproducir
-        // Usamos una promesa para evitar errores si el usuario salió rápido
-        video.play().catch(() => { /* Ignorar errores de interrupción */ });
-    });
-});
+        //document.querySelectorAll('.hover-video').forEach(video => {
+            // 1. Escuchamos cuando el video termina
+          //  video.addEventListener('ended', () => {
+                // 2. Rebobinamos al segundo deseado
+               // video.currentTime = LOOP_START_TIME;
+                
+                // 3. Volvemos a reproducir
+                // Usamos una promesa para evitar errores si el usuario salió rápido
+              //  video.play().catch(() => { /* Ignorar errores de interrupción */ });
+          //  });
+        //});
         
         // --- CONFIGURACIÓN ---
         const videoPathPrefix = "https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/"; // Si los videos están en una carpeta, pon: "assets/videos/"
@@ -362,8 +369,10 @@ document.querySelectorAll('.hover-video').forEach(video => {
         const vidTrans = document.getElementById('vid-transition');
         const interactionLayer = document.getElementById('interaction-layer');
         const zones = document.querySelectorAll('.interaction-zone');
-         const labels = document.querySelectorAll('.menu-label');
+        const labels = document.querySelectorAll('.menu-label');
 
+          // Opcional: Si no usas cursor personalizado, comenta la siguiente línea
+        const customCursor = document.querySelector('.custom-cursor'); 
         let isTransitioning = false; // Flag para evitar dobles clics
         let activeHoverColor = null; // Para evitar conflictos de animaciones
 
@@ -573,6 +582,11 @@ document.querySelectorAll('.hover-video').forEach(video => {
             // Desactivar interacción inmediatamente
             interactionLayer.style.pointerEvents = 'none';
 
+            
+            // Ocultar UI
+            gsap.to(".menu-label", { opacity: 0, duration: 0.2 });
+            gsap.to("#hero-cta", { opacity: 0, duration: 0.2 }); // Ocultar título si sigue ahí
+
             // Definir fuente del video de transición
             // Estructura esperada: "https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/TransitionCintaYellow.mp4"
             const videoFile = `${videoPathPrefix}TransitionCinta${colorName}.mp4`;
@@ -604,19 +618,38 @@ document.querySelectorAll('.hover-video').forEach(video => {
             };
         }
 
+        // --- LÓGICA DE BUCLE PERSONALIZADO (START & END) ---
+// Escanea todos los videos que tengan configuración de bucle
+document.querySelectorAll('.hover-video[data-loop-end]').forEach(video => {
+    
+    video.addEventListener('timeupdate', () => {
+        // Leemos los tiempos configurados en el HTML
+        // Usamos parseFloat por si pones decimales (ej: 6.5)
+        const loopStart = parseFloat(video.dataset.loopStart) || 0;
+        const loopEnd = parseFloat(video.dataset.loopEnd);
+
+        // Si el video llega (o se pasa) del tiempo final...
+        if (loopEnd && video.currentTime >= loopEnd) {
+            // ... rebobinamos al tiempo de inicio
+            video.currentTime = loopStart;
+             // Forzamos reproducción por si acaso
+            if (video.paused) video.play();
+        }
+    });
+});
+
+           // --- 6. LOGICA MOUSE MOVE (CURSOR) ---
+        // Esto solo funciona si agregas <div class="custom-cursor"></div> al HTML
+        if(customCursor) {
+            document.addEventListener('mousemove', (e) => {
+                gsap.to(customCursor, { x: e.clientX, y: e.clientY, duration: 0.1 });
+            });
+        }
+        
         // --- OPTIMIZACIÓN ---
         // Aseguramos que los videos ocultos se pausen para no consumir recursos
         // (Excepto durante los crossfades cortos)
     });
-
-    // JS simple para mover el div .custom-cursor
-document.addEventListener('mousemove', (e) => {
-    gsap.to(".custom-cursor", { x: e.clientX, y: e.clientY, duration: 0.1 });
-});
-
-// En el hover de las zonas:
-zone.addEventListener('mouseenter', () => document.querySelector('.custom-cursor').classList.add('active'));
-zone.addEventListener('mouseleave', () => document.querySelector('.custom-cursor').classList.remove('active'));
     
 </script>
 </body>
