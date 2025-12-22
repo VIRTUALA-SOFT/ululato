@@ -113,51 +113,95 @@
     pointer-events: none; 
 }
 
-/* --- ESTILO DE LOS TEXTOS (LABELS) --- */
+/* --- ESTILO PREMIUM: GLASSMORPHISM + MOVING GOLD BORDER --- */
 .menu-label {
-    /* --- POSICIONAMIENTO (No tocar) --- */
+    /* POSICIONAMIENTO */
     position: absolute;
     cursor: pointer;
     pointer-events: auto;
     opacity: 0;
     transform: translateY(20px);
-
-    /* --- TIPOGRAFÍA (Cinzel) --- */
+    
+    /* TIPOGRAFÍA */
     font-family: 'Cinzel', serif;
-    color: #ffffff;
-    font-size: 1.1rem; /* Un poco más pequeño para elegancia */
-    font-weight: 700;  /* Bold para que se lea bien sobre video */
+    color: #ffffff; /* Oro pálido para el texto */
+    font-size: 1rem;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 2px;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.5); /* Sombra suave para legibilidad */
+    
+    /* ESTRUCTURA PARA EL BORDE ANIMADO */
+    position: absolute;
+    overflow: hidden; /* Recorta el brillo sobrante */
+    border-radius: 12px; /* Redondeo externo */
+    padding: 14px 28px; /* Espacio interno */
+    
+    /* Importante: Quitamos bordes y fondos directos aquí porque los pseudo-elementos lo harán */
+    background: transparent; 
+    border: none;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); /* Sombra profunda */
 
-    /* --- CAJA DE CRISTAL (Glassmorphism) --- */
-    /* Fondo Grisáceo semitransparente */
-    background: rgba(40, 44, 52, 0.4); 
+    /* Transición suave para movimiento */
+    transition: transform 0.3s ease, letter-spacing 0.3s ease, box-shadow 0.3s ease;
     
-    /* El efecto de desenfoque mágico */
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px); /* OBLIGATORIO para Safari/iPhone */
-    
-    /* Bordes y Forma */
-    border: 1px solid rgba(255, 255, 255, 0.2); /* Borde sutil brillante */
-    border-radius: 12px; /* Esquinas redondeadas */
-    padding: 12px 24px;  /* Aire alrededor del texto */
-    
-    /* Sombra de la caja para profundidad 3D */
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-
-    /* Transiciones suaves */
-    transition: background 0.3s ease, transform 0.3s ease, border-color 0.3s ease;
+    /* Aseguramos que el texto esté encima de los fondos */
+    z-index: 20;
+    display: flex; justify-content: center; align-items: center;
 }
 
-    /* --- ESTADO HOVER DEL PROPIO BOTÓN --- */
-/* Cuando el usuario pone el mouse ENCIMA DEL TEXTO, lo iluminamos */
+/* 1. LA SERPIENTE DORADA (El fondo que gira) */
+.menu-label::before {
+    content: '';
+    position: absolute;
+    width: 200%;     /* Mucho más grande que la caja para cubrir al girar */
+    height: 200%;
+    top: -50%; left: -50%; /* Centrado */
+    z-index: -2;     /* Al fondo de todo */
+    
+    /* EL DEGRADADO MÁGICO */
+    background: conic-gradient(
+        transparent, 
+        transparent, 
+        transparent, 
+        #b8860b 20%, /* Oro Oscuro */
+        #FFD700      /* Oro Brillante (La punta de la serpiente) */
+    );
+    
+    /* La animación de giro infinito */
+    animation: rotate-border 4s linear infinite;
+}
+
+/* 2. EL VIDRIO ESMERILADO (La tapa que oculta el centro) */
+.menu-label::after {
+    content: '';
+    position: absolute;
+    z-index: -1; /* Encima del borde dorado, debajo del texto */
+    
+    /* INSET define el grosor del borde (aquí 1.5px) */
+    inset: 2px; 
+    
+    /* Estilo del Vidrio */
+    background: rgba(20, 20, 25, 0.7); /* Fondo oscuro semitransparente */
+    backdrop-filter: blur(10px);       /* Desenfoque */
+    -webkit-backdrop-filter: blur(10px);
+    
+    border-radius: 10px; /* Un poco menos que el padre para encajar */
+}
+
+/* 3. HOVER (Efecto al interactuar) */
 .menu-label:hover {
-    background: rgba(60, 64, 72, 0.6); /* Un poco más claro */
-    border-color: rgba(255, 255, 255, 0.6); /* Borde más brillante */
-    transform: scale(1.05) translateY(0) !important; /* Pequeño zoom */
+    transform: scale(1.05) translateY(0); /* Zoom sutil */
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.3); /* Resplandor dorado */
+    text-shadow: 0 0 8px rgba(255, 215, 0, 0.8); /* Texto brilla */
+    letter-spacing: 3px;
 }
+
+/* 4. DEFINICIÓN DE LA ANIMACIÓN */
+@keyframes rotate-border {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
     
 /* --- POSICIONES (COORDENADAS) --- */
 /* Ajusta estos porcentajes (top, left, right, bottom) para mover los textos */
@@ -295,10 +339,10 @@
 
   <!-- 2. CAPA DE TEXTOS (Menú Flotante) -->
 <div class="text-overlay-layer">
-    <div id="text-yellow" class="menu-label" data-color="Yellow">Marketplace</div>
-    <div id="text-blue"   class="menu-label" data-color="Blue">Cursos Virtuales</div>
-    <div id="text-red"    class="menu-label" data-color="Red">Georeferenciación</div>
-    <div id="text-green"  class="menu-label" data-color="Green">Comunidad</div>
+    <div id="text-yellow" class="menu-label" data-color="Yellow"><span>Marketplace</span></div>
+    <div id="text-blue"   class="menu-label" data-color="Blue"><span>Cursos Virtuales</span></div>
+    <div id="text-red"    class="menu-label" data-color="Red"><span>Georeferenciación</span></div>
+    <div id="text-green"  class="menu-label" data-color="Green"><span>Comunidad</span></div>
 </div>
 
 <div id="hero-cta" class="hero-cta">
