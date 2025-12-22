@@ -4,8 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Immersive Experience | Production Ready</title>
-<!-- GSAP (Core Animation Engine) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- GSAP (Core Animation Engine) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 <style>
     /* --- RESET & BASE --- */
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -110,28 +115,50 @@
 
 /* --- ESTILO DE LOS TEXTOS (LABELS) --- */
 .menu-label {
+    /* --- POSICIONAMIENTO (No tocar) --- */
     position: absolute;
-    color: #fff;
-    font-family: sans-serif; /* O tu fuente 'Inter' si la importaste */
+    cursor: pointer;
+    pointer-events: auto;
+    opacity: 0;
+    transform: translateY(20px);
+
+    /* --- TIPOGRAFÍA (Cinzel) --- */
+    font-family: 'Cinzel', serif;
+    color: #ffffff;
+    font-size: 1.1rem; /* Un poco más pequeño para elegancia */
+    font-weight: 700;  /* Bold para que se lea bien sobre video */
     text-transform: uppercase;
     letter-spacing: 2px;
-    font-weight: 600;
-    font-size: 1.2rem; /* Tamaño del texto */
-    cursor: pointer;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5); /* Sombra suave para legibilidad */
 
-    /* ESTADO INICIAL (Invisible) */
-    /* GSAP modificará esto, pero empezamos ocultos */
-    opacity: 0;
-    transform: translateY(20px); 
+    /* --- CAJA DE CRISTAL (Glassmorphism) --- */
+    /* Fondo Grisáceo semitransparente */
+    background: rgba(40, 44, 52, 0.4); 
+    
+    /* El efecto de desenfoque mágico */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px); /* OBLIGATORIO para Safari/iPhone */
+    
+    /* Bordes y Forma */
+    border: 1px solid rgba(255, 255, 255, 0.2); /* Borde sutil brillante */
+    border-radius: 12px; /* Esquinas redondeadas */
+    padding: 12px 24px;  /* Aire alrededor del texto */
+    
+    /* Sombra de la caja para profundidad 3D */
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
 
-    /* IMPORTANTE: Reactivar clics en el texto */
-    pointer-events: auto; 
-
-    /* Estética Premium */
-    text-shadow: 0 2px 10px rgba(0,0,0,0.8);
-    /* mix-blend-mode: difference;  <-- Descomenta si quieres que el texto invierta color según el fondo */
+    /* Transiciones suaves */
+    transition: background 0.3s ease, transform 0.3s ease, border-color 0.3s ease;
 }
 
+    /* --- ESTADO HOVER DEL PROPIO BOTÓN --- */
+/* Cuando el usuario pone el mouse ENCIMA DEL TEXTO, lo iluminamos */
+.menu-label:hover {
+    background: rgba(60, 64, 72, 0.6); /* Un poco más claro */
+    border-color: rgba(255, 255, 255, 0.6); /* Borde más brillante */
+    transform: scale(1.05) translateY(0) !important; /* Pequeño zoom */
+}
+    
 /* --- POSICIONES (COORDENADAS) --- */
 /* Ajusta estos porcentajes (top, left, right, bottom) para mover los textos */
 
@@ -343,7 +370,7 @@
                 const txt = document.getElementById(textId);
 
                 // Sincronizar video
-                if (vidLoop.readyState > 0) vid.currentTime = vidLoop.currentTime;
+               // if (vidLoop.readyState > 0) vid.currentTime = vidLoop.currentTime;
                 vid.play();
 
                 // Animación Video
