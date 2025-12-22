@@ -177,7 +177,7 @@
             }
 
             // --- 2. ORQUESTACIÓN INTRO -> LOOP ---
-            vidIntro.addEventListener('ended', () => {
+          /*  vidIntro.addEventListener('ended', () => {
                 // Iniciamos reproducción del loop ANTES de mostrarlo (seamless)
                 vidLoop.play();
 
@@ -196,6 +196,37 @@
                     { autoAlpha: 0 }, 
                     { autoAlpha: 1, duration: 1, ease: "power2.out" }
                 );
+            });*/
+
+            
+       
+            const CUT_SECONDS = 4; // Cuantos segundos antes quieres cortar
+            let transitionTriggered = false; // Candado para que no se dispare mil veces
+            
+            vidIntro.addEventListener('timeupdate', () => {
+                // Si (Duración total - Tiempo actual) es menor o igual a 4 segundos...
+                if (!transitionTriggered && (vidIntro.duration - vidIntro.currentTime <= CUT_SECONDS)) {
+                    
+                    transitionTriggered = true; // Bloqueamos para que ocurra solo una vez
+                    
+                    console.log("✂️ Cortando video por código e iniciando Loop");
+                    
+                    // 1. Iniciar el siguiente video inmediatamente
+                    vidLoop.play();
+            
+                    // 2. Crossfade visual (GSAP)
+                    vidIntro.classList.remove('active');
+                    vidIntro.classList.add('hidden');
+                    
+                    vidLoop.classList.remove('hidden');
+                    vidLoop.classList.add('active');
+            
+                    // 3. Activar interacción
+                    interactionLayer.style.visibility = 'visible';
+                    
+                    // 4. Detener el intro un poco después para ahorrar recursos
+                    setTimeout(() => vidIntro.pause(), 1000);
+                }
             });
 
             // --- 3. INTERACCIÓN (CLICS) ---
