@@ -86,7 +86,18 @@
         .interaction-zone:hover {
             fill: rgba(255, 255, 255, 0.05); 
         }
+
+        /* Clase base para los videos de hover */
+        .hover-video {
+            opacity: 0;
+            z-index: 3; /* Encima del loop (z-index: 2) */
+            transition: none; /* Dejaremos que GSAP maneje la transición */
+        }
         
+        /* Ajuste de capas */
+        #vid-loop.active { z-index: 2; }
+        #vid-transition.active { z-index: 5; } /* La transición final siempre arriba */
+                
     </style>
 </head>
 <body>
@@ -108,7 +119,28 @@
                 <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/Tejido2.mp4" type="video/mp4">
             </video>
 
-            <!-- 3. TRANSICIÓN (Source dinámico) -->
+            <!-- === CAPA DE VIDEOS HOVER === -->
+        <!-- Están ocultos (opacity: 0) y pausados por defecto -->
+        
+        <video id="hover-yellow" class="video-layer hover-video" loop muted playsinline preload="auto">
+            <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/HoverCintaYellow.mp4" type="video/mp4">
+        </video>
+
+        <video id="hover-blue" class="video-layer hover-video" loop muted playsinline preload="auto">
+            <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/HoverCintaBlue.mp4" type="video/mp4">
+        </video>
+
+        <video id="hover-red" class="video-layer hover-video" loop muted playsinline preload="auto">
+            <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/HoverCintaRed.mp4" type="video/mp4">
+        </video>
+
+        <video id="hover-green" class="video-layer hover-video" loop muted playsinline preload="auto">
+            <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/HoverCintaGreen.mp4" type="video/mp4">
+        </video>
+        <!-- =================================== -->
+            
+
+            <!-- 4. TRANSICIÓN (Source dinámico) -->
             <video id="vid-transition" class="hidden" muted playsinline>
                 <!-- Se inyecta por JS -->
             </video>
@@ -230,7 +262,54 @@
             });
 
             // --- 3. INTERACCIÓN (CLICS) ---
+
+            const loopVideo = document.getElementById('vid-loop'); 
+            
             zones.forEach(zone => {
+
+                 // 1. Obtener el ID del video hover asociado a esta zona
+                    const hoverVideoId = zone.dataset.hoverId;
+                    const hoverVideo = document.getElementById(hoverVideoId);
+                
+                    // EVENTO: ENTRAR (HOVER)
+                    zone.addEventListener('mouseenter', () => {
+                        // Evitar conflictos si ya se está yendo a otra página
+                        if (isTransitioning || !hoverVideo) return;
+                
+                        // OPCIONAL: Sincronización de Tiempo (Nivel Dios)
+                        // Si el video de hover es la misma animación que el fondo pero con brillo:
+                        // Igualamos el tiempo para que encajen perfectos.
+                        if (loopVideo.readyState > 0) {
+                            hoverVideo.currentTime = loopVideo.currentTime;
+                        }
+                
+                        // Reproducir video
+                        hoverVideo.play();
+                
+                        // Animación GSAP (Fade In rápido)
+                        gsap.to(hoverVideo, {
+                            opacity: 1,
+                            duration: 0.4,
+                            ease: "power2.out"
+                        });
+                    });
+                
+                    // EVENTO: SALIR (HOVER OUT)
+                    zone.addEventListener('mouseleave', () => {
+                        if (!hoverVideo) return;
+                
+                        // Animación GSAP (Fade Out)
+                        gsap.to(hoverVideo, {
+                            opacity: 0,
+                            duration: 0.4,
+                            ease: "power2.out",
+                            onComplete: () => {
+                                // Pausar video para ahorrar CPU/Batería
+                                hoverVideo.pause();
+                            }
+                        });
+                    });
+                                
                 zone.addEventListener('click', () => {
                     if (isTransitioning) return;
                     
