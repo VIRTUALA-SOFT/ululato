@@ -187,7 +187,63 @@
     bottom: 20%; 
     left: 20%; 
 }
-            
+
+    .hero-cta {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 15; /* Debajo del menú, encima del video */
+    text-align: center;
+    color: white;
+    pointer-events: none; /* Dejar pasar clics */
+    transition: opacity 0.5s ease;
+}
+
+.hero-cta h1 {
+    font-family: 'Cinzel', serif;
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    text-shadow: 0 4px 20px rgba(0,0,0,0.8);
+    letter-spacing: 4px;
+}
+
+.hero-cta p {
+    font-family: 'Inter', sans-serif; /* O sans-serif limpia */
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    opacity: 0.8;
+    background: rgba(0,0,0,0.3); /* Fondo muy sutil para leer */
+    padding: 8px 16px;
+    border-radius: 20px;
+    display: inline-block;
+    backdrop-filter: blur(4px);
+}
+
+    /* Ocultar cursor nativo en el contenedor (opcional, arriesgado en UX) */
+/* .hero-immersive { cursor: none; } */
+
+.custom-cursor {
+    position: fixed;
+    top: 0; left: 0;
+    width: 40px; height: 40px;
+    border: 1px solid rgba(255,255,255,0.5);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: transform 0.1s ease, background 0.2s;
+    mix-blend-mode: difference; /* Se ve sobre blanco y negro */
+}
+
+.custom-cursor.active {
+    transform: translate(-50%, -50%) scale(1.5);
+    background: rgba(255,255,255,0.2);
+    border-color: white;
+}
+    
+    
 </style>
 </head>
 <body>
@@ -241,6 +297,11 @@
     <div id="text-green"  class="menu-label" data-color="Green">Comunidad</div>
 </div>
 
+<div id="hero-cta" class="hero-cta">
+    <h1>El Origen del Tejido</h1>
+    <p>Explora las hebras para descubrir nuestra historia</p>
+    <div class="mouse-icon"></div> <!-- Opcional: ícono de mouse/dedo -->
+</div>
 
 <!-- CAPA DE INTERACCIÓN SVG -->
 <!-- Ajusta el viewBox a la resolución nativa de tu video (ej: 1920 1080) -->
@@ -352,6 +413,28 @@
         
                 // 3. Activar interacción
                 interactionLayer.style.visibility = 'visible';
+
+                // A) Mostrar todos los textos suavemente (Cascada)
+                gsap.to(".menu-label", {
+                    y: 0, 
+                    opacity: 1, 
+                    duration: 1, 
+                    stagger: 0.2, // Que aparezcan uno tras otro
+                    ease: "power2.out",
+                    delay: 0.5 // Espera medio segundo a que el loop se vea bien
+                });
+
+                // B) Ocultarlos automáticamente después de unos segundos
+                // Esto le enseña al usuario que ahí hay texto
+                gsap.to(".menu-label", {
+                    y: 20, 
+                    opacity: 0, 
+                    duration: 1, 
+                    stagger: 0.1, 
+                    ease: "power2.in",
+                    delay: 4.5, // 0.5 entrada + 3s de lectura + 1s salida
+                    overwrite: "auto" // VITAL: Si el usuario hace hover antes, esto se cancela para no molestar
+                });
                 
                 // 4. Detener el intro un poco después para ahorrar recursos
                 setTimeout(() => vidIntro.pause(), 1000);
@@ -415,19 +498,26 @@
             }
 
             // --- APLICAR LOGICA A LAS CINTAS (ZONES) ---
-            zones.forEach(zone => {
+              zones.forEach(zone => {
                 const hoverVideoId = zone.dataset.hoverId;
                 const textId = zone.dataset.textId;
                 const color = zone.dataset.color;
                 const url = zone.dataset.url;
 
-                // Entrar en cinta
-                zone.addEventListener('mouseenter', () => activateState(hoverVideoId, textId, color));
+                // EVENTO: ENTRAR (Modificado para ocultar CTA)
+                zone.addEventListener('mouseenter', () => {
+                    // 1. Ejecutar la lógica normal (Video + Texto menú)
+                    activateState(hoverVideoId, textId, color);
+
+                    // 2. NUEVO: Ocultar el Título Guía (#hero-cta) al tocar una cinta
+                    // 'overwrite: auto' cancela animaciones previas para que no parpadee
+                    gsap.to("#hero-cta", { opacity: 0, duration: 0.5, overwrite: "auto" });
+                });
                 
-                // Salir de cinta
+                // Salir de cinta (Igual que antes)
                 zone.addEventListener('mouseleave', (e) => deactivateState(hoverVideoId, textId, color, e.relatedTarget));
 
-                // Clic en cinta
+                // Clic en cinta (Igual que antes)
                 zone.addEventListener('click', () => triggerTransition(color, url));
             });
 
@@ -492,6 +582,16 @@
         // Aseguramos que los videos ocultos se pausen para no consumir recursos
         // (Excepto durante los crossfades cortos)
     });
+
+    // JS simple para mover el div .custom-cursor
+document.addEventListener('mousemove', (e) => {
+    gsap.to(".custom-cursor", { x: e.clientX, y: e.clientY, duration: 0.1 });
+});
+
+// En el hover de las zonas:
+zone.addEventListener('mouseenter', () => document.querySelector('.custom-cursor').classList.add('active'));
+zone.addEventListener('mouseleave', () => document.querySelector('.custom-cursor').classList.remove('active'));
+    
 </script>
 </body>
 </html>
