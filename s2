@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Immersive Experience | Production Ready</title>
+    
+    <!-- GSAP (Core Animation Engine) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <style>
+        /* --- RESET & BASE --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { 
+            width: 100%; height: 100%; 
+            background-color: #000; 
+            overflow: hidden; /* Evita scroll durante la experiencia */
+            font-family: sans-serif;
+        }
+
+        /* --- LOADER --- */
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 999;
+            display: flex; justify-content: center; align-items: center;
+            color: #fff; text-transform: uppercase; letter-spacing: 2px; font-size: 12px;
+            transition: opacity 0.5s ease;
+            pointer-events: none;
+        }
+
+        /* --- ESCENARIO PRINCIPAL --- */
+        .hero-immersive {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .video-container {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        }
+
+        /* --- CAPA DE VIDEO --- */
+        video {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: cover; /* Mantiene la inmersión sin deformar */
+            opacity: 0;
+            transition: opacity 0.6s ease; /* Crossfade suave nativo + GSAP helper */
+            will-change: opacity;
+        }
+
+        video.active {
+            opacity: 1;
+            z-index: 2;
+        }
+
+        video.hidden {
+            opacity: 0;
+            z-index: 1;
+        }
+
+        /* --- CAPA DE INTERACCIÓN (SVG INVISIBLE) --- */
+        .interaction-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 10;
+            /* Se mantiene oculta hasta que arranca el loop */
+            visibility: hidden; 
+        }
+
+        svg {
+            width: 100%; height: 100%;
+            /* IMPORTANTE: preserveAspectRatio asegura que el SVG se estire igual que el video (object-fit: cover) */
+            /* Si el video es 16:9, usar 'xMidYMid slice' es crucial */
+        }
+
+        .interaction-zone {
+            fill: transparent; /* Totalmente invisible */
+            cursor: pointer;
+            pointer-events: auto;
+            transition: fill 0.3s ease;
+        }
+
+        /* Feedback visual sutil al usuario (Opcional) */
+        /* Esto ayuda a descubrir que es interactivo sin romper la inmersión */
+        .interaction-zone:hover {
+            fill: rgba(255, 255, 255, 0.05); 
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- PRELOADER -->
+    <div id="loader">Cargando Experiencia...</div>
+
+    <section class="hero-immersive">
+        
+        <!-- CAPA DE VIDEOS -->
+        <div class="video-container">
+            <!-- 1. INTRO -->
+            <video id="vid-intro" class="active" muted playsinline preload="auto">
+                <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/Tejido.mp4" type="video/mp4">
+            </video>
+
+            <!-- 2. LOOP (Bucle de las cintas) -->
+            <video id="vid-loop" class="hidden" loop muted playsinline preload="auto">
+                <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/Tejido2.mp4" type="video/mp4">
+            </video>
+
+            <!-- 3. TRANSICIÓN (Source dinámico) -->
+            <video id="vid-transition" class="hidden" muted playsinline>
+                <!-- Se inyecta por JS -->
+            </video>
+        </div>
+
+        <!-- CAPA DE INTERACCIÓN SVG -->
+        <!-- Ajusta el viewBox a la resolución nativa de tu video (ej: 1920 1080) -->
+        <div class="interaction-layer" id="interaction-layer">
+            <svg viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+                
+                <!-- IMPORTANTE: Reemplaza los atributos d="..." con tus trazados reales -->
+                
+                <!-- CINTA AMARILLA -->
+                <path id="zone-yellow" class="interaction-zone" 
+                      data-color="Yellow" data-url="/home-yellow"
+                      d="M200,800 C300,700 400,900 500,800 L600,1000 L200,1000 Z"></path>
+                
+                <!-- CINTA AZUL -->
+                <path id="zone-blue" class="interaction-zone" 
+                      data-color="Blue" data-url="/home-blue"
+                      d="M1400,800 C1500,700 1600,900 1700,800 L1800,1000 L1400,1000 Z"></path>
+
+                <!-- CINTA ROJA -->
+                <path id="zone-red" class="interaction-zone" 
+                      data-color="Red" data-url="/home-red"
+                      d="M800,200 C900,100 1000,300 1100,200 L1200,400 L800,400 Z"></path>
+
+                <!-- CINTA VERDE -->
+                <path id="zone-green" class="interaction-zone" 
+                      data-color="Green" data-url="/home-green"
+                      d="M200,200 C300,100 400,300 500,200 L600,400 L200,400 Z"></path>
+
+            </svg>
+        </div>
+
+    </section>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            
+            // --- CONFIGURACIÓN ---
+            const videoPathPrefix = ""; // Si los videos están en una carpeta, pon: "assets/videos/"
+            
+            // --- REFERENCIAS DOM ---
+            const loader = document.getElementById('loader');
+            const vidIntro = document.getElementById('vid-intro');
+            const vidLoop = document.getElementById('vid-loop');
+            const vidTrans = document.getElementById('vid-transition');
+            const interactionLayer = document.getElementById('interaction-layer');
+            const zones = document.querySelectorAll('.interaction-zone');
+
+            let isTransitioning = false; // Flag para evitar dobles clics
+
+            // --- 1. INICIALIZACIÓN ---
+            // Esperamos a que el intro tenga suficiente data para reproducir
+            vidIntro.addEventListener('canplaythrough', () => {
+                loader.style.opacity = '0';
+                setTimeout(() => loader.remove(), 600);
+                vidIntro.play().catch(e => console.log("Autoplay bloqueado por navegador, requiere interacción."));
+            }, { once: true });
+
+            // Fallback por si 'canplaythrough' ya ocurrió
+            if (vidIntro.readyState >= 3) {
+                loader.style.opacity = '0';
+                vidIntro.play();
+            }
+
+            // --- 2. ORQUESTACIÓN INTRO -> LOOP ---
+            vidIntro.addEventListener('ended', () => {
+                // Iniciamos reproducción del loop ANTES de mostrarlo (seamless)
+                vidLoop.play();
+
+                // Crossfade
+                vidIntro.classList.remove('active');
+                vidIntro.classList.add('hidden');
+                
+                vidLoop.classList.remove('hidden');
+                vidLoop.classList.add('active');
+
+                // Activamos la capa de interacción
+                interactionLayer.style.visibility = 'visible';
+                
+                // Animación de entrada para las zonas (opcional, mejora UX)
+                gsap.fromTo(zones, 
+                    { autoAlpha: 0 }, 
+                    { autoAlpha: 1, duration: 1, ease: "power2.out" }
+                );
+            });
+
+            // --- 3. INTERACCIÓN (CLICS) ---
+            zones.forEach(zone => {
+                zone.addEventListener('click', () => {
+                    if (isTransitioning) return;
+                    
+                    const color = zone.dataset.color; // Ej: "Yellow"
+                    const targetUrl = zone.dataset.url;
+                    
+                    triggerTransition(color, targetUrl);
+                });
+            });
+
+            // --- 4. LÓGICA DE TRANSICIÓN ---
+            function triggerTransition(colorName, url) {
+                isTransitioning = true;
+                
+                // Desactivar interacción inmediatamente
+                interactionLayer.style.pointerEvents = 'none';
+
+                // Definir fuente del video de transición
+                // Estructura esperada: "https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/TransitionCintaYellow.mp4"
+                const videoFile = `${videoPathPrefix}TransitionCinta${colorName}.mp4`;
+                vidTrans.src = videoFile;
+                vidTrans.load();
+
+                // Cuando el video de transición esté listo
+                vidTrans.oncanplaythrough = () => {
+                    vidTrans.play();
+
+                    // Switch visual Loop -> Transición
+                    vidLoop.classList.remove('active');
+                    vidLoop.classList.add('hidden'); // Opcional: pausar vidLoop aquí para ahorrar CPU
+
+                    vidTrans.classList.remove('hidden');
+                    vidTrans.classList.add('active');
+                };
+
+                // --- 5. FIN Y REDIRECCIÓN ---
+                vidTrans.onended = () => {
+                    // Fade out a negro (o blanco) antes de cambiar de página
+                    gsap.to(vidTrans, {
+                        opacity: 0,
+                        duration: 0.8,
+                        onComplete: () => {
+                            window.location.href = url;
+                        }
+                    });
+                };
+            }
+
+            // --- OPTIMIZACIÓN ---
+            // Aseguramos que los videos ocultos se pausen para no consumir recursos
+            // (Excepto durante los crossfades cortos)
+        });
+    </script>
+</body>
+</html>
