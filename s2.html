@@ -3,284 +3,234 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Immersive Experience | Production Ready</title>
-<!-- GSAP (Core Animation Engine) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-
-<style>
-    /* --- RESET & BASE --- */
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { 
-        width: 100%; height: 100%; 
-        background-color: #000; 
-        overflow: hidden; /* Evita scroll durante la experiencia */
-        font-family: sans-serif;
-    }
-
-    /* --- LOADER --- */
-    #loader {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: #000; z-index: 999;
-        display: flex; justify-content: center; align-items: center;
-        color: #fff; text-transform: uppercase; letter-spacing: 2px; font-size: 12px;
-        transition: opacity 0.5s ease;
-        pointer-events: none;
-    }
-
-    /* --- ESCENARIO PRINCIPAL --- */
-    .hero-immersive {
-        position: relative;
-        width: 100vw;
-        height: 100vh;
-    }
-
-    .video-container {
-        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    }
-
-    /* --- CAPA DE VIDEO --- */
-    video {
-        position: absolute;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        object-fit: cover; /* Mantiene la inmersión sin deformar */
-        opacity: 0;
-        transition: opacity 0.6s ease; /* Crossfade suave nativo + GSAP helper */
-        will-change: opacity;
-    }
-
-    video.active {
-        opacity: 1;
-        z-index: 2;
-    }
-
-    video.hidden {
-        opacity: 0;
-        z-index: 1;
-    }
-
-    /* --- CAPA DE INTERACCIÓN (SVG INVISIBLE) --- */
-    .interaction-layer {
-        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-        z-index: 10;
-        /* Se mantiene oculta hasta que arranca el loop */
-        visibility: hidden; 
-    }
-
-    svg {
-        width: 100%; height: 100%;
-        /* IMPORTANTE: preserveAspectRatio asegura que el SVG se estire igual que el video (object-fit: cover) */
-        /* Si el video es 16:9, usar 'xMidYMid slice' es crucial */
-    }
-
-    .interaction-zone {
-        fill: transparent; /* Totalmente invisible */
-        cursor: pointer;
-        pointer-events: auto;
-        transition: fill 0.3s ease;
-    }
-
-    /* Feedback visual sutil al usuario (Opcional) */
-    /* Esto ayuda a descubrir que es interactivo sin romper la inmersión */
-    .interaction-zone:hover {
-        fill: rgba(255, 255, 255, 0.05); 
-    }
-
-    /* Clase base para los videos de hover */
-    .hover-video {
-        opacity: 0;
-        z-index: 3; /* Encima del loop (z-index: 2) */
-        transition: none; /* Dejaremos que GSAP maneje la transición */
-    }
+    <title>Immersive Experience | Premium Menu</title>
     
-    /* Ajuste de capas */
-    #vid-loop.active { z-index: 2; }
-    #vid-transition.active { z-index: 5; } /* La transición final siempre arriba */
-            
-</style>
+    <!-- GSAP (Core Animation Engine) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <!-- Fuente Google Fonts (Inter) para estilo premium -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;600&display=swap" rel="stylesheet">
 
-    </head>
-<body>
-<!-- PRELOADER -->
-<div id="loader">Cargando Experiencia...</div>
-
-<section class="hero-immersive">
-    
-    <!-- CAPA DE VIDEOS -->
-    <div class="video-container">
-        <!-- 1. INTRO -->
-        <video id="vid-intro" class="active" muted playsinline preload="auto">
-            <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/Tejido.mp4" type="video/mp4">
-        </video>
-
-        <!-- 2. LOOP (Bucle de las cintas) -->
-        <video id="vid-loop" class="hidden" loop muted playsinline preload="auto">
-            <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/Tejido2.mp4" type="video/mp4">
-        </video>
-
-        <!-- === CAPA DE VIDEOS HOVER === -->
-    <!-- Están ocultos (opacity: 0) y pausados por defecto -->
-    
-    <video id="hover-yellow" class="video-layer hover-video" loop muted playsinline preload="auto">
-        <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/HoverCintaYellow.mp4" type="video/mp4">
-    </video>
-
-    <video id="hover-blue" class="video-layer hover-video" loop muted playsinline preload="auto">
-        <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/HoverCintaBlue.mp4" type="video/mp4">
-    </video>
-
-    <video id="hover-red" class="video-layer hover-video" loop muted playsinline preload="auto">
-        <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/HoverCintaRed.mp4" type="video/mp4">
-    </video>
-
-    <video id="hover-green" class="video-layer hover-video" loop muted playsinline preload="auto">
-        <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/HoverCintaGreen.mp4" type="video/mp4">
-    </video>
-    <!-- =================================== -->
-        
-
-        <!-- 4. TRANSICIÓN (Source dinámico) -->
-        <video id="vid-transition" class="hidden" muted playsinline>
-            <!-- Se inyecta por JS -->
-        </video>
-    </div>
-
-      <!-- 2. CAPA DE TEXTOS (Menú Flotante) -->
-    <div class="text-overlay-layer">
-        <div id="text-yellow" class="menu-label" data-color="Yellow">Marketplace</div>
-        <div id="text-blue"   class="menu-label" data-color="Blue">Cursos Virtuales</div>
-        <div id="text-red"    class="menu-label" data-color="Red">Georeferenciación</div>
-        <div id="text-green"  class="menu-label" data-color="Green">Comunidad</div>
-    </div>
-
-    
-    <!-- CAPA DE INTERACCIÓN SVG -->
-    <!-- Ajusta el viewBox a la resolución nativa de tu video (ej: 1920 1080) -->
-    <div class="interaction-layer" id="interaction-layer">
-        <svg viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
-            
-            <!-- IMPORTANTE: Reemplaza los atributos d="..." con tus trazados reales -->
-            
-            <!-- CINTA AMARILLA -->
-            <path id="zone-yellow" class="interaction-zone" 
-                  data-color="Yellow" data-url="https://virtuala-soft.github.io/earth/dsc/wayuu/amarilla.html" data-text-id="text-yellow" data-hover-id="hover-yellow"
-                  d="M1414,412c-9-1-277,8-277,8s-307-14-307-14c0,0-293.57,8-293.29,14s-48.71,7-48.71,13,167,99,167,99l200,90,157,84,97,49,24,14-11,36s-21,41-27,41-145-45.56-144-44.78-119-40.22-119-40.22l-152-86-182-95-85-48-45-86-34-82,22.55-22.55h66.2l62.25-23.45h121.95l221.05,18,113-4s133,11,138,16,172,5,172,5l113,8h71.17l-21.17,51Z"></path>
-            
-            <!-- CINTA AZUL -->
-            <path id="zone-blue" class="interaction-zone" 
-                  data-color="Blue" data-url="https://virtuala-soft.github.io/earth/dsc/wayuu/azul.html" data-text-id="text-blue" data-hover-id="hover-blue"
-                  d="M747,319l69.05,69.05,157.95,94.95,138,110,130,118,20.44,20.44s-95.44-15.44-102.44-15.44-96-55-96-55l-87-67-168.21-168.21-49.79-73.79-76-74-24,8,42,74,105,138,102,93,108,95,137,81,98,33,49,9,16-38-5-81-119.66-142.5-145.34-112.5-155-121-104-63-112-14-10,30,82,52Z"></path>
-
-            <!-- CINTA ROJA -->
-            <path id="zone-red" class="interaction-zone" 
-                  data-color="Red" data-url="https://virtuala-soft.github.io/earth/dsc/wayuu/roja.html" data-text-id="text-red" data-hover-id="hover-red"
-                  d="M648,814l-13-71s11-40,18-41,71-62,71-62l147-124,181-169,158-133,75-42,44,67v30.84l-128,105.16-76.15,76.15-94.85,83.85-170,138-138,106-18,45-35,12-21-22Z"></path>
-
-            <!-- CINTA VERDE -->
-            <path id="zone-green" class="interaction-zone" data-text-id="text-green" data-hover-id="hover-green"
-                  data-color="Green" data-url="https://virtuala-soft.github.io/earth/dsc/wayuu/verde.html"
-                  d="M811,820l142-74s197-80,208-85,189-100,189-100l128-86-269-37-138-24-188,32-171,36h-109.03l-37.97,1-11-45,91.38-24s217.62-29,217.62-29,183-10,179-9,206.32-1,206.32-1l144.68,7,99,3,45,19,41,59,16,53-13,53-53,40-106,62-217,104-110,51-121,40-94,28-58-28-24-36,13-10Z"></path>
-
-        </svg>
-    </div>
-
-</section>
-
-<script>
-    document.addEventListener("DOMContentLoaded", () => {
-        
-        // --- CONFIGURACIÓN ---
-        const videoPathPrefix = "https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/"; // Si los videos están en una carpeta, pon: "assets/videos/"
-        
-        // --- REFERENCIAS DOM ---
-        const loader = document.getElementById('loader');
-        const vidIntro = document.getElementById('vid-intro');
-        const vidLoop = document.getElementById('vid-loop');
-        const vidTrans = document.getElementById('vid-transition');
-        const interactionLayer = document.getElementById('interaction-layer');
-        const zones = document.querySelectorAll('.interaction-zone');
-         const labels = document.querySelectorAll('.menu-label');
-
-        let isTransitioning = false; // Flag para evitar dobles clics
-        let activeHoverColor = null; // Para evitar conflictos de animaciones
-
-        // --- 1. INICIALIZACIÓN ---
-        // Esperamos a que el intro tenga suficiente data para reproducir
-        vidIntro.addEventListener('canplaythrough', () => {
-            loader.style.opacity = '0';
-            setTimeout(() => loader.remove(), 600);
-            vidIntro.play().catch(e => console.log("Autoplay bloqueado por navegador, requiere interacción."));
-        }, { once: true });
-
-        // Fallback por si 'canplaythrough' ya ocurrió
-        if (vidIntro.readyState >= 3) {
-            loader.style.opacity = '0';
-            vidIntro.play();
+    <style>
+        /* --- RESET & BASE --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { 
+            width: 100%; height: 100%; 
+            background-color: #000; 
+            overflow: hidden; 
+            font-family: 'Inter', sans-serif;
         }
 
-        // --- 2. ORQUESTACIÓN INTRO -> LOOP ---
-      /*  vidIntro.addEventListener('ended', () => {
-            // Iniciamos reproducción del loop ANTES de mostrarlo (seamless)
-            vidLoop.play();
+        /* --- LOADER --- */
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 999;
+            display: flex; justify-content: center; align-items: center;
+            color: #fff; text-transform: uppercase; letter-spacing: 2px; font-size: 12px;
+            transition: opacity 0.5s ease;
+            pointer-events: none;
+        }
 
-            // Crossfade
-            vidIntro.classList.remove('active');
-            vidIntro.classList.add('hidden');
+        /* --- ESCENARIO PRINCIPAL --- */
+        .hero-immersive { position: relative; width: 100vw; height: 100vh; }
+        .video-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+        /* --- CAPA DE VIDEO --- */
+        video {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            object-fit: cover; opacity: 0;
+            transition: opacity 0.6s ease; will-change: opacity;
+        }
+        video.active { opacity: 1; z-index: 2; }
+        video.hidden { opacity: 0; z-index: 1; }
+        .hover-video { opacity: 0; z-index: 3; transition: none; }
+        
+        #vid-loop.active { z-index: 2; }
+        #vid-transition.active { z-index: 5; }
+
+        /* --- CAPA DE TEXTOS (ESTILOS QUE FALTABAN) --- */
+        .text-overlay-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 20; /* Encima de todo */
+            pointer-events: none; /* Deja pasar el clic si no toca texto */
+        }
+
+        .menu-label {
+            position: absolute;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+            font-size: 1.2rem;
+            cursor: pointer;
+            opacity: 0; /* Invisible inicialmente */
+            pointer-events: auto; /* El texto sí recibe clics */
+            text-shadow: 0 2px 15px rgba(0,0,0,0.8);
+            mix-blend-mode: difference; /* Se lee bien sobre cualquier color */
+            transform: translateY(20px); /* Posición inicial para la animación */
+        }
+
+        /* POSICIONES DE LOS TEXTOS (Ajustadas a tus coordenadas SVG) */
+        /* Cinta Amarilla (SVG M1414... está a la derecha) */
+        #text-yellow { top: 30%; right: 15%; text-align: right; }
+        
+        /* Cinta Azul (SVG M747... está a la izquierda/centro) */
+        #text-blue   { top: 25%; left: 20%; }
+        
+        /* Cinta Roja (SVG M648... está abajo a la izquierda) */
+        #text-red    { bottom: 20%; left: 15%; }
+        
+        /* Cinta Verde (SVG M811... está abajo al centro) */
+        #text-green  { bottom: 15%; left: 50%; transform: translateX(-50%) translateY(20px); }
+
+
+        /* --- CAPA DE INTERACCIÓN (SVG INVISIBLE) --- */
+        .interaction-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 10; visibility: hidden; 
+        }
+        svg { width: 100%; height: 100%; }
+        
+        .interaction-zone {
+            fill: transparent; cursor: pointer; pointer-events: auto;
+            transition: fill 0.3s ease;
+        }
+        /* Debug visual opcional (eliminar en prod) */
+        /* .interaction-zone:hover { fill: rgba(255, 255, 255, 0.1); } */
+
+    </style>
+</head>
+<body>
+
+    <!-- PRELOADER -->
+    <div id="loader">Cargando Experiencia...</div>
+
+    <section class="hero-immersive">
+        
+        <!-- CAPA DE VIDEOS -->
+        <div class="video-container">
+            <!-- 1. INTRO -->
+            <video id="vid-intro" class="active" muted playsinline preload="auto">
+                <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/Tejido.mp4" type="video/mp4">
+            </video>
+
+            <!-- 2. LOOP -->
+            <video id="vid-loop" class="hidden" loop muted playsinline preload="auto">
+                <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/Tejido2.mp4" type="video/mp4">
+            </video>
+
+            <!-- 3. HOVERS -->
+            <video id="hover-yellow" class="hover-video" loop muted playsinline preload="auto"><source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/HoverCintaYellow.mp4" type="video/mp4"></video>
+            <video id="hover-blue" class="hover-video" loop muted playsinline preload="auto"><source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/HoverCintaBlue.mp4" type="video/mp4"></video>
+            <video id="hover-red" class="hover-video" loop muted playsinline preload="auto"><source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/HoverCintaRed.mp4" type="video/mp4"></video>
+            <video id="hover-green" class="hover-video" loop muted playsinline preload="auto"><source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/HoverCintaGreen.mp4" type="video/mp4"></video>
+
+            <!-- 4. TRANSICIÓN -->
+            <video id="vid-transition" class="hidden" muted playsinline></video>
+        </div>
+
+        <!-- CAPA DE TEXTOS (ESTO ES LO QUE SE VA A ANIMAR) -->
+        <div class="text-overlay-layer">
+            <div id="text-yellow" class="menu-label" data-color="Yellow">Marketplace</div>
+            <div id="text-blue"   class="menu-label" data-color="Blue">Cursos Virtuales</div>
+            <div id="text-red"    class="menu-label" data-color="Red">Georeferenciación</div>
+            <div id="text-green"  class="menu-label" data-color="Green">Comunidad</div>
+        </div>
+
+        <!-- CAPA DE INTERACCIÓN SVG -->
+        <div class="interaction-layer" id="interaction-layer">
+            <svg viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+                
+                <!-- CINTA AMARILLA -->
+                <path id="zone-yellow" class="interaction-zone" 
+                      data-color="Yellow" data-url="https://virtuala-soft.github.io/earth/dsc/wayuu/amarilla.html" 
+                      data-text-id="text-yellow" data-hover-id="hover-yellow"
+                      d="M1414,412c-9-1-277,8-277,8s-307-14-307-14c0,0-293.57,8-293.29,14s-48.71,7-48.71,13,167,99,167,99l200,90,157,84,97,49,24,14-11,36s-21,41-27,41-145-45.56-144-44.78-119-40.22-119-40.22l-152-86-182-95-85-48-45-86-34-82,22.55-22.55h66.2l62.25-23.45h121.95l221.05,18,113-4s133,11,138,16,172,5,172,5l113,8h71.17l-21.17,51Z"></path>
+                
+                <!-- CINTA AZUL -->
+                <path id="zone-blue" class="interaction-zone" 
+                      data-color="Blue" data-url="https://virtuala-soft.github.io/earth/dsc/wayuu/azul.html" 
+                      data-text-id="text-blue" data-hover-id="hover-blue"
+                      d="M747,319l69.05,69.05,157.95,94.95,138,110,130,118,20.44,20.44s-95.44-15.44-102.44-15.44-96-55-96-55l-87-67-168.21-168.21-49.79-73.79-76-74-24,8,42,74,105,138,102,93,108,95,137,81,98,33,49,9,16-38-5-81-119.66-142.5-145.34-112.5-155-121-104-63-112-14-10,30,82,52Z"></path>
+
+                <!-- CINTA ROJA -->
+                <path id="zone-red" class="interaction-zone" 
+                      data-color="Red" data-url="https://virtuala-soft.github.io/earth/dsc/wayuu/roja.html" 
+                      data-text-id="text-red" data-hover-id="hover-red"
+                      d="M648,814l-13-71s11-40,18-41,71-62,71-62l147-124,181-169,158-133,75-42,44,67v30.84l-128,105.16-76.15,76.15-94.85,83.85-170,138-138,106-18,45-35,12-21-22Z"></path>
+
+                <!-- CINTA VERDE -->
+                <path id="zone-green" class="interaction-zone" 
+                      data-color="Green" data-url="https://virtuala-soft.github.io/earth/dsc/wayuu/verde.html" 
+                      data-text-id="text-green" data-hover-id="hover-green"
+                      d="M811,820l142-74s197-80,208-85,189-100,189-100l128-86-269-37-138-24-188,32-171,36h-109.03l-37.97,1-11-45,91.38-24s217.62-29,217.62-29,183-10,179-9,206.32-1,206.32-1l144.68,7,99,3,45,19,41,59,16,53-13,53-53,40-106,62-217,104-110,51-121,40-94,28-58-28-24-36,13-10Z"></path>
+
+            </svg>
+        </div>
+
+    </section>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
             
-            vidLoop.classList.remove('hidden');
-            vidLoop.classList.add('active');
-
-            // Activamos la capa de interacción
-            interactionLayer.style.visibility = 'visible';
+            // --- CONFIGURACIÓN ---
+            const videoPathPrefix = "https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/"; 
             
-            // Animación de entrada para las zonas (opcional, mejora UX)
-            gsap.fromTo(zones, 
-                { autoAlpha: 0 }, 
-                { autoAlpha: 1, duration: 1, ease: "power2.out" }
-            );
-        });*/
+            // --- REFERENCIAS DOM ---
+            const loader = document.getElementById('loader');
+            const vidIntro = document.getElementById('vid-intro');
+            const vidLoop = document.getElementById('vid-loop');
+            const vidTrans = document.getElementById('vid-transition');
+            const interactionLayer = document.getElementById('interaction-layer');
+            const zones = document.querySelectorAll('.interaction-zone');
+            const labels = document.querySelectorAll('.menu-label');
 
-        
-   
-        const CUT_SECONDS = 8; // Cuantos segundos antes quieres cortar
-        let transitionTriggered = false; // Candado para que no se dispare mil veces
-        
-        vidIntro.addEventListener('timeupdate', () => {
-            // Si (Duración total - Tiempo actual) es menor o igual a 4 segundos...
-            if (!transitionTriggered && (vidIntro.duration - vidIntro.currentTime <= CUT_SECONDS)) {
-                
-                transitionTriggered = true; // Bloqueamos para que ocurra solo una vez
-                
-                console.log("✂️ Cortando video por código e iniciando Loop");
-                
-                // 1. Iniciar el siguiente video inmediatamente
-                vidLoop.play();
-        
-                // 2. Crossfade visual (GSAP)
-                vidIntro.classList.remove('active');
-                vidIntro.classList.add('hidden');
-                
-                vidLoop.classList.remove('hidden');
-                vidLoop.classList.add('active');
-        
-                // 3. Activar interacción
-                interactionLayer.style.visibility = 'visible';
-                
-                // 4. Detener el intro un poco después para ahorrar recursos
-                setTimeout(() => vidIntro.pause(), 1000);
+            let isTransitioning = false;
+            let activeHoverColor = null; 
+
+            // --- 1. INICIALIZACIÓN ---
+            vidIntro.addEventListener('canplaythrough', () => {
+                loader.style.opacity = '0';
+                setTimeout(() => loader.remove(), 600);
+                vidIntro.play().catch(e => console.log("Autoplay bloqueado. Toque la pantalla."));
+            }, { once: true });
+
+            if (vidIntro.readyState >= 3) {
+                loader.style.opacity = '0';
+                vidIntro.play();
             }
-        });
 
-        
+            // --- 2. ORQUESTACIÓN INTRO -> LOOP ---
+            const CUT_SECONDS = 8;
+            let transitionTriggered = false;
+            
+            vidIntro.addEventListener('timeupdate', () => {
+                if (!transitionTriggered && vidIntro.duration && (vidIntro.duration - vidIntro.currentTime <= CUT_SECONDS)) {
+                    transitionTriggered = true;
+                    
+                    vidLoop.play();
+                    
+                    vidIntro.classList.remove('active');
+                    vidIntro.classList.add('hidden');
+                    
+                    vidLoop.classList.remove('hidden');
+                    vidLoop.classList.add('active');
+            
+                    interactionLayer.style.visibility = 'visible';
+                    setTimeout(() => vidIntro.pause(), 1000);
+                }
+            });
+
             // --- 3. LÓGICA PREMIUM DE INTERACCIÓN (VIDEO + TEXTO) ---
             
-            // Función Maestra: ACTIVAR (Mostrar Video y Texto)
+            // ACTIVAR
             function activateState(hoverVideoId, textId, color) {
                 if (isTransitioning) return;
-                activeHoverColor = color; // Marcamos quien manda
+                activeHoverColor = color; 
 
                 const vid = document.getElementById(hoverVideoId);
                 const txt = document.getElementById(textId);
+
+                if (!vid || !txt) return;
 
                 // Sincronizar video
                 if (vidLoop.readyState > 0) vid.currentTime = vidLoop.currentTime;
@@ -299,7 +249,7 @@
                 });
             }
 
-            // Función Maestra: DESACTIVAR (Ocultar si nos vamos)
+            // DESACTIVAR
             function deactivateState(hoverVideoId, textId, color, relatedTarget) {
                 // TRUCO PRO: Si nos movemos hacia el texto o hacia la cinta del mismo color, NO APAGAMOS
                 if (relatedTarget && (relatedTarget.id === textId || relatedTarget.dataset.color === color)) {
@@ -309,6 +259,8 @@
                 activeHoverColor = null;
                 const vid = document.getElementById(hoverVideoId);
                 const txt = document.getElementById(textId);
+
+                if (!vid || !txt) return;
 
                 // Ocultar Video
                 gsap.to(vid, { 
@@ -327,84 +279,37 @@
                 });
             }
 
-            // --- APLICAR LOGICA A LAS CINTAS (ZONES) ---
+            // --- EVENTOS CINTAS (ZONES) ---
             zones.forEach(zone => {
                 const hoverVideoId = zone.dataset.hoverId;
                 const textId = zone.dataset.textId;
                 const color = zone.dataset.color;
                 const url = zone.dataset.url;
 
-                // Entrar en cinta
                 zone.addEventListener('mouseenter', () => activateState(hoverVideoId, textId, color));
-                
-                // Salir de cinta
                 zone.addEventListener('mouseleave', (e) => deactivateState(hoverVideoId, textId, color, e.relatedTarget));
-
-                // Clic en cinta
                 zone.addEventListener('click', () => triggerTransition(color, url));
             });
 
-            // --- APLICAR LOGICA A LOS TEXTOS (LABELS) ---
-            // Esto permite que el usuario vaya de la cinta al texto sin que se apague
+            // --- EVENTOS TEXTOS (LABELS) ---
             labels.forEach(label => {
                 const color = label.dataset.color;
-                // Buscamos la zona correspondiente para obtener IDs
                 const zone = document.querySelector(`.interaction-zone[data-color="${color}"]`);
-                const hoverVideoId = zone.dataset.hoverId;
-                const textId = label.id;
-                const url = zone.dataset.url;
+                if(zone) {
+                    const hoverVideoId = zone.dataset.hoverId;
+                    const textId = label.id;
+                    const url = zone.dataset.url;
 
-                // Entrar en texto
-                label.addEventListener('mouseenter', () => activateState(hoverVideoId, textId, color));
-
-                // Salir de texto
-                label.addEventListener('mouseleave', (e) => deactivateState(hoverVideoId, textId, color, e.relatedTarget));
-
-                // Clic en texto
-                label.addEventListener('click', () => triggerTransition(color, url));
+                    label.addEventListener('mouseenter', () => activateState(hoverVideoId, textId, color));
+                    label.addEventListener('mouseleave', (e) => deactivateState(hoverVideoId, textId, color, e.relatedTarget));
+                    label.addEventListener('click', () => triggerTransition(color, url));
+                }
             });
-        // --- 4. LÓGICA DE TRANSICIÓN ---
-        function triggerTransition(colorName, url) {
-            isTransitioning = true;
-            
-            // Desactivar interacción inmediatamente
-            interactionLayer.style.pointerEvents = 'none';
 
-            // Definir fuente del video de transición
-            // Estructura esperada: "https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/TransitionCintaYellow.mp4"
-            const videoFile = `${videoPathPrefix}TransitionCinta${colorName}.mp4`;
-            vidTrans.src = videoFile;
-            vidTrans.load();
-
-            // Cuando el video de transición esté listo
-            vidTrans.oncanplaythrough = () => {
-                vidTrans.play();
-
-                // Switch visual Loop -> Transición
-                vidLoop.classList.remove('active');
-                vidLoop.classList.add('hidden'); // Opcional: pausar vidLoop aquí para ahorrar CPU
-
-                vidTrans.classList.remove('hidden');
-                vidTrans.classList.add('active');
-            };
-
-            // --- 5. FIN Y REDIRECCIÓN ---
-            vidTrans.onended = () => {
-                // Fade out a negro (o blanco) antes de cambiar de página
-                gsap.to(vidTrans, {
-                    opacity: 0,
-                    duration: 0.8,
-                    onComplete: () => {
-                        window.location.href = url;
-                    }
-                });
-            };
-        }
-
-        // --- OPTIMIZACIÓN ---
-        // Aseguramos que los videos ocultos se pausen para no consumir recursos
-        // (Excepto durante los crossfades cortos)
-    });
-</script>
-</body>
-</html>
+            // --- 4. TRANSICIÓN ---
+            function triggerTransition(colorName, url) {
+                isTransitioning = true;
+                interactionLayer.style.pointerEvents = 'none';
+                
+                // Ocultar todos los textos
+                gsap.to(".menu-label", { opacity: 0, duration: 0.2 });
