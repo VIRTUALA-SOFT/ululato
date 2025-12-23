@@ -903,11 +903,27 @@
                                 });
                             }
             
-                            // PLAY VIDEO (Si aún no suena)
+                            // PLAY VIDEO (Si aún no suena)                            
                             if (elapsed > (CONFIG.fadeEnd - 0.5) && video.paused) {
-                                video.play().catch(e=>{});
+                                // 1. FORZAMOS SILENCIO para garantizar el Autoplay
+                                video.muted = true; 
+                                
+                                // 2. Intentamos reproducir
+                                video.play().then(() => {
+                                    // 3. (Opcional) Si el usuario tenía el sonido activado antes,
+                                    // intentamos activarlo SUAVEMENTE, pero si falla, no importa, el video ya corre.
+                                    const pref = localStorage.getItem('ululato_sound_pref');
+                                    if (pref === 'on') {
+                                        // Intentamos desmutear, pero si el navegador dice NO, capturamos el error
+                                        // para que el video no se detenga.
+                                        video.muted = false;
+                                    }
+                                }).catch(error => {
+                                    console.log("Autoplay prevenido. Mostrando botón de play manual.");
+                                });
                             }
-            
+
+                            
                             // FIN ABSOLUTO DE LA INTRO
                             if (elapsed >= CONFIG.duration) {
                                 finishIntro();
