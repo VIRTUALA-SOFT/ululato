@@ -904,19 +904,22 @@
                             }
             
                             
+                            // PLAY VIDEO (Si aún no suena)                            
+                            if (elapsed > (CONFIG.fadeEnd - 0.5) && video.paused) {
+                                // 1. FORZAMOS SILENCIO para garantizar el Autoplay
+                                video.muted = true; 
+                                
+                                 // 2. Play directo, sin promesas complejas ni localStorage
+    video.play().catch(error => {
+        console.warn("Autoplay forzado falló. Intentando play secundario.");
+        // Fallback: Si falla, forzamos mute de nuevo e intentamos
+        video.muted = true;
+        video.play();
+    });
+}.log("Autoplay prevenido. Mostrando botón de play manual.");
+                                });
                             
-                            
-                              // B. PLAY VIDEO (3.5s)
-                    if (elapsed > (CONFIG.fadeEnd - 0.5) && video.paused) {
-                        video.muted = true
-                        const pref = localStorage.getItem('ululato_sound_pref');
-                        // Si el usuario ya activó el sonido antes, aseguramos que suene
-                        if (pref === 'on') { video.muted = false; video.volume = 1; audioBtn.classList.add('active'); }
-                        video.play().catch(e => console.log("Auto-play blocked pending user interaction"));
-                        hasTriggeredPlay = true;
-                    }
-                            }
-
+                                           
                             
                             // FIN ABSOLUTO DE LA INTRO
                             if (elapsed >= CONFIG.duration) {
