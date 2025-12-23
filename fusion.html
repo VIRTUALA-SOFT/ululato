@@ -1263,89 +1263,85 @@
         // SCRIPT SCROLL ESCENA 1
         // ===========================================================================================================================================================
 
-        <script>
-            // Variables de control para el scroll
-            let isWarping = false; 
-            let section1Loaded = true; // Asumo que esto lo controlas desde el Script 1
-            // let currentScene = 1; // Asumo que tienes esta variable global definida en algún sitio
-        
-            // Si no tienes una variable global currentScene, podemos usar clases para detectar:
-            // const isScene1 = document.getElementById('scene-material').classList.contains('active');
-        
-            window.addEventListener('wheel', (e) => {
-                
-                // 1. Referencias rápidas para validación
-                const sceneMaterial = document.getElementById('scene-material');
-                const isScene1Active = sceneMaterial.classList.contains('active'); // Verificamos si la escena 1 está activa
-        
-                // 2. Condiciones
-                const scrollingDown = e.deltaY > 0;
-                const notWarping = !isWarping; // Evita dispararlo doble vez
+     <!-- SCRIPT SCROLL (Script 3) -->
+<script>
+    // Variables globales para el scroll
+    let isWarping = false; 
 
-                 // DEBUG: Descomenta esta línea si quieres ver si detecta el scroll en la consola
-                  console.log("Scroll detectado:", e.deltaY, "Escena 1 Activa:", isScene1Active);
-                
-                // 3. GATILLO
-                if (scrollingDown && isScene1Active && notWarping) {
-                    console.log("🚀 Validado: Iniciando Warp a Escena 2");
-                    isWarping = true; // Bloqueamos inmediatamente
-                    initWarpSequence(); // 
-                }
+    window.addEventListener('wheel', (e) => {
         
-            }, { passive: true });
-             
-            
-            function initWarpSequence() {
-                const sceneMaterial = document.getElementById('scene-material');
-                const sceneDigital = document.getElementById('scene-digital');
-                const warpLayer = document.getElementById('warp-layer');
-                const warpVideo = document.getElementById('warp-video');
-                
-                // NOTA: Ya no necesitamos seleccionar 'introCintas' aquí, 
-                // porque el Script 2 se encargará de eso.
+        // 1. CONDICIONES DE SCROLL (Lectura directa del DOM)
+        // Detectamos si el body tiene la clase 'loaded' (que pone el Script 1 al terminar)
+        const isIntroFinished = document.body.classList.contains('loaded');
+
+        // Detectamos si la Escena 1 está visible actualmente
+        const sceneMaterial = document.getElementById('scene-material');
+        const isScene1Active = sceneMaterial && sceneMaterial.classList.contains('active');
+
+        // Dirección del scroll
+        const scrollingDown = e.deltaY > 0;
         
-                // 1. ARRANCAR MOTORES (Video Warp)
-                warpLayer.style.opacity = '1';
-                warpLayer.style.pointerEvents = 'all'; // Asegura que cubra todo
-                warpVideo.play();
-                
-                // 2. A MITAD DEL VIAJE (El truco de magia)
-                // Ajusta este tiempo para que coincida con el momento más oscuro o rápido de tu video warp
-                setTimeout(() => {
-                    
-                    // A. Apagar Escena 1 (Material)
-                    sceneMaterial.classList.remove('active');
-                    sceneMaterial.classList.add('hidden');
+        // Bloqueo de seguridad
+        const notWarping = !isWarping;
+
+        // --- GATILLO DE TRANSICIÓN ---
+        if (scrollingDown && isScene1Active && notWarping && isIntroFinished) {
+            console.log("🚀 DESPEGUE: Iniciando Warp a Escena 2");
+            isWarping = true; // Bloqueamos para que no se dispare mil veces
+            initWarpSequence(); 
+        }
+
+    }, { passive: true });
+     
+    
+    function initWarpSequence() {
+        const sceneMaterial = document.getElementById('scene-material');
+        const sceneDigital = document.getElementById('scene-digital');
+        // Asegúrate que en CSS esto sea #warp-layer con z-index alto
+        const warpLayer = document.getElementById('warp-layer'); 
+        const warpVideo = document.getElementById('warp-video');
+        
+        // 1. ARRANCAR MOTORES (Video Warp)
+        warpLayer.style.opacity = '1';
+        warpLayer.style.pointerEvents = 'all'; 
+        
+        // Aseguramos que el video de transición suene o no según prefieras (muted recomendado para transiciones)
+        warpVideo.muted = true; 
+        warpVideo.play().catch(e => console.log("Warp play error:", e));
+        
+        // 2. A MITAD DEL VIAJE
+        setTimeout(() => {
             
-                    // B. Encender Escena 2 (Digital/Cintas)
-                    sceneDigital.classList.remove('hidden');
-                    sceneDigital.classList.add('active');
-                    
-                    // C. LLAMAR A LA FUNCIÓN GLOBAL DEL SCRIPT 2  <--- AQUÍ ESTÁ EL CAMBIO
-                    // Esto le quita el candado a la Escena 2 y hace que sus videos arranquen
-                    if (typeof window.activarEscena2 === 'function') {
-                        window.activarEscena2();
-                    } else {
-                        console.error("⚠️ No se encontró la función activarEscena2. Revisa que el Script 2 esté cargado.");
-                    }
+            // A. Apagar Escena 1
+            sceneMaterial.classList.remove('active');
+            sceneMaterial.classList.add('hidden');
+    
+            // B. Encender Escena 2
+            sceneDigital.classList.remove('hidden');
+            sceneDigital.classList.add('active');
             
-                }, 1000); // 1 segundo después de iniciar el warp
-            
-                // 3. ATERRIZAJE (Fin del Warp)
-                warpVideo.addEventListener('ended', () => {
-                    // Desvanecer capa warp suavemente
-                    gsap.to(warpLayer, { 
-                        opacity: 0, 
-                        duration: 0.5, 
-                        onComplete: () => {
-                            warpLayer.style.pointerEvents = 'none'; // Dejar pasar clicks
-                            isWarping = false; // Liberar variable por si se necesita (aunque ya cambiamos de escena)
-                        }
-                    });
-                }, { once: true }); // Importante: once: true para que no se acumulen eventos
+            // C. AVISAR A LA ESCENA 2 (Desbloquear candado)
+            if (typeof window.activarEscena2 === 'function') {
+                window.activarEscena2();
+            } else {
+                console.error("⚠️ Error: window.activarEscena2 no existe.");
             }
-        
-        </script>
+    
+        }, 1000); // Ajustar tiempo según tu video
+    
+        // 3. ATERRIZAJE
+        warpVideo.onended = () => {
+            gsap.to(warpLayer, { 
+                opacity: 0, 
+                duration: 0.5, 
+                onComplete: () => {
+                    warpLayer.style.pointerEvents = 'none'; 
+                    isWarping = false; 
+                }
+            });
+        };
+    }
+</script>
     
 </body>
 </html>
