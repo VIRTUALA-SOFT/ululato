@@ -892,67 +892,57 @@
                 glContainer.appendChild(renderer.domElement);
 
                 
-                // ==========================================
-        // 2. TÚNEL DE HUMO & VIDEO TIME-FREEZE
-        // ==========================================
-        function initTunnelAnimation() {
-            const CONFIG = {
-                duration: 4.5,            // Duración viaje
-                fadeStart: 3.0,           // Inicio revelación visual
-                fadeEnd: 4.0,             // Fin del humo
-                speed: 3500,              // Velocidad de nubes
-                innerRadius: 140, radiusVar: 220, count: 350, stretch: 12
-            };
+          function animate() {
+                    let elapsed = clock.getElapsedTime();
+                    
+                    camera.position.z -= CONFIG.speed * 0.016;
+                    clouds.forEach(c => { if(c.position.z > camera.position.z + 500) c.position.z -= 10000; });
+                    camera.position.x = (Math.random()-0.5)*10; camera.position.y = (Math.random()-0.5)*10;
+                    scene.rotation.z += 0.003;
 
-            const video = document.getElementById('bg-video');
-            video.pause(); video.currentTime = 0; // Video congelado
+                    // A. FADE VISUAL (3.0s)
+                    if (elapsed > CONFIG.fadeStart) {
+                        if (!hasTriggeredFade) {
+                            document.body.classList.add('reveal-video');
+                            hasTriggeredFade = true;
+                        }
 
-            let scene, camera, renderer, clouds = [], clock = new THREE.Clock();
-            let hasTriggeredFade = false;
-            let hasTriggeredPlay = false;
+                        let progress = (elapsed - CONFIG.fadeStart) / (CONFIG.fadeEnd - CONFIG.fadeStart);
+                        progress = Math.min(progress, 1);
+                        let expansion = Math.pow(progress, 3) * 3000;
 
-            const textureLoader = new THREE.TextureLoader();
-            textureLoader.load("https://raw.githubusercontent.com/navin-navi/codepen-assets/master/images/smoke.png", (texture) => {
-                
-                // 1. Mostrar WebGL (sobre estrellas)
-                const glContainer = document.getElementById("webgl-container");
-                glContainer.classList.add('active'); 
-                
-                // 2. Desvanecer Estrellas
-                setTimeout(() => {
-                    starContainer.classList.add('fade-out');
-                    setTimeout(() => cancelAnimationFrame(starAnimId), 2000); 
-                }, 800);
+                        clouds.forEach(c => {
+                            let r = c.userData.r + expansion;
+                            c.position.x = Math.cos(c.userData.a) * r;
+                            c.position.y = Math.sin(c.userData.a) * r;
+                            c.scale.z = THREE.MathUtils.lerp(CONFIG.stretch, 1, progress);
+                            c.material.opacity = 1 * (1 - progress);
+                        });
+                    }
 
-                scene = new THREE.Scene();
-                camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 1, 10000);
-                camera.position.z = 1000;
+                  // B. PLAY VIDEO (3.5s)
+                    if (elapsed > (CONFIG.fadeEnd - 0.5) && !hasTriggeredPlay) {
+                        const pref = localStorage.getItem('ululato_sound_pref');
+                        // Si el usuario ya activó el sonido antes, aseguramos que suene
+                        if (pref === 'on') { video.muted = false; video.volume = 1; audioBtn.classList.add('active'); }
+                        video.play().catch(e => console.log("Auto-play blocked pending user interaction"));
+                        hasTriggeredPlay = true;
+                    }
 
-                const ambient = new THREE.AmbientLight(0x555555); scene.add(ambient);
-                const light = new THREE.PointLight(0xffffff, 5, 1000); light.position.set(0,0,-2000); scene.add(light);
-
-                const mat = new THREE.MeshLambertMaterial({
-                    map: texture, transparent: true, opacity: 1, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide
-                });
-                const geo = new THREE.PlaneBufferGeometry(400,400);
-
-                for(let i=0; i<CONFIG.count; i++) {
-                    let c = new THREE.Mesh(geo, mat.clone());
-                    let z = (Math.random()*10000)-5000;
-                    let a = Math.random()*Math.PI*2;
-                    let r = CONFIG.innerRadius + (Math.random()*CONFIG.radiusVar);
-                    c.position.set(Math.cos(a)*r, Math.sin(a)*r, z);
-                    c.rotation.z = Math.random()*360;
-                    c.scale.set(1.5, 1.5, CONFIG.stretch);
-                    if(Math.random()>0.5) c.material.color.setHex(0x00aaff); else c.material.color.setHex(0xffaa00);
-                    c.userData = { r: r, a: a };
-                    clouds.push(c); scene.add(c);
+                    // C. FINALIZAR
+                    if (elapsed >= CONFIG.duration) {
+                        finishIntro(renderer);
+                        return;
+                    }
+                    
+                    renderer.render(scene, camera);
+                    requestAnimationFrame(animate);
                 }
+                animate();
+            });
+        }
 
-                renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "high-performance" });
-                renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.setClearColor(0x000000, 0); 
-                glContainer.appendChild(renderer.domElement);
+    
 
     function finishIntro() {
         hasIntroFinished = true;
