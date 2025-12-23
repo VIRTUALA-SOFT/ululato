@@ -933,7 +933,7 @@
                 if (elapsed >= CONFIG.duration) { finishIntro(); return; }
                 renderer.render(scene, camera);
                 tunnelAnimId = requestAnimationFrame(animate);
-            }
+            
             animate();
         });
     }
