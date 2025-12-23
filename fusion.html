@@ -742,24 +742,13 @@
     const preloader = document.getElementById('preloader');
     const audioBtn = document.getElementById('audioBtn');
 
-    // --- 0. PROTOCOLO DE AMNESIA (EJECUCIÓN INMEDIATA) ---
-    // Esto se ejecuta antes que cualquier otra cosa para apagar el botón visualmente
-    if(audioBtn) {
-        // Forzamos la eliminación de la clase, sin importar qué diga el HTML
-        audioBtn.classList.remove('active'); 
-        // Clonamos el nodo para eliminar listeners viejos (truco de limpieza extrema)
-        // Nota: Solo hacemos esto si hay problemas graves de eventos fantasmas, 
-        // pero por ahora confiaremos en el remove('active').
-    }
-    
-    // Limpieza de memoria del navegador
+    // --- 0. PROTOCOLO DE AMNESIA ---
+    if(audioBtn) audioBtn.classList.remove('active'); 
     try { localStorage.removeItem('ululato_sound_pref'); } catch(e){}
 
-    // Configuración del video para Autoplay
     if(video) {
-        video.muted = true; // OBLIGATORIO para autoplay
+        video.muted = true; 
         video.volume = 1;        
-      
     }
 
     // ==========================================
@@ -792,9 +781,7 @@
         sCtx.fillStyle = isWarping ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 1)'; 
         sCtx.fillRect(0, 0, width, height);
 
-        // --- LOOP DE SINCRONIZACIÓN VISUAL ---
-        // Esto es un "policía" que vigila 60 veces por segundo:
-        // Si el video está mudo, el botón DEBE estar apagado.
+        // Sync visual (Safety check)
         if(audioBtn && video) {
             if(video.muted && audioBtn.classList.contains('active')) {
                 audioBtn.classList.remove('active'); 
@@ -836,7 +823,7 @@
     }
 
     // ==========================================
-    // 2. TÚNEL
+    // 2. TÚNEL (THREE.JS)
     // ==========================================
     let renderer, scene, camera, clock;
     function initTunnelAnimation() {
@@ -883,16 +870,16 @@
                 if (!isSceneActive || hasIntroFinished) return;
                 let elapsed = clock.getElapsedTime();
                 
-                // ... (Tu código de movimiento de cámara y nubes sigue igual) ...
                 camera.position.z -= CONFIG.speed * 0.016;
                 clouds.forEach(c => { if(c.position.z > camera.position.z + 500) c.position.z -= 10000; });
                 camera.position.x = (Math.random()-0.5)*10; camera.position.y = (Math.random()-0.5)*10;
                 scene.rotation.z += 0.003;
 
-                // Fades y Expansión (Igual que antes)
+                // Fades y Expansión
                 if (elapsed > CONFIG.fadeStart && !document.body.classList.contains('reveal-video')) {
                     document.body.classList.add('reveal-video');
                 }
+                
                 if (elapsed > CONFIG.fadeStart) {
                      let progress = (elapsed - CONFIG.fadeStart) / (CONFIG.fadeEnd - CONFIG.fadeStart);
                      progress = Math.min(progress, 1);
@@ -904,43 +891,30 @@
                         c.scale.z = THREE.MathUtils.lerp(CONFIG.stretch, 1, progress);
                         c.material.opacity = 1 * (1 - progress);
                     });
-                }}
+                } // CORRECCIÓN: Esta llave cierra SOLO el if, no la función.
 
                 // PLAY VIDEO (Autoplay Seguro)
+                // Ahora esto está DENTRO del loop animate, que es lo correcto.
                 if (elapsed > (CONFIG.fadeEnd - 0.5) ) {
-                     // Solo intentamos si está pausado
-                    if (video.paused) {
-                        // VERIFICACIÓN CRÍTICA: ¿El video tiene datos para mostrar?
-                        // readyState 3 = HAVE_FUTURE_DATA (Suficiente para reproducir)
-                        if (video.readyState >= 3) {
-                            video.muted = true; // Aseguramos mute
-                            
-                            // Promesa simple. Si falla, el bucle volverá a intentar en el siguiente frame
-                            // pero solo si readyState sigue siendo válido.
-                            let playPromise = video.play();
-                            if (playPromise !== undefined) {
-                                playPromise.catch(e => {
-                                    // Error silencioso. No hacemos nada, el bucle reintentará.
-                                });
-                            }
-                        } else {
-                            // Si no tiene datos, NO hacemos play(). 
-                            // Dejamos que el navegador siga cargando sin interrumpirlo.
-                        }
+                    if (video.paused && video.readyState >= 3) {
+                        video.muted = true; 
+                        let playPromise = video.play();
+                        if (playPromise !== undefined) playPromise.catch(e => {});
                     }
                 }
                 
                 if (elapsed >= CONFIG.duration) { finishIntro(); return; }
                 renderer.render(scene, camera);
                 tunnelAnimId = requestAnimationFrame(animate);
+            } // CORRECCIÓN: Cierre correcto de animate()
             
-            animate();
+            animate(); // Inicia el loop
         });
     }
 
     function finishIntro() {
         hasIntroFinished = true;
-        document.body.classList.add('loaded'); // Esta clase es vital para el Script 3
+        document.body.classList.add('loaded'); 
         
         const glContainer = document.getElementById('webgl-container');
         if(glContainer) {
@@ -952,47 +926,60 @@
         initNeuralVeil(); 
     }
 
-    // 3. CAPA NEURAL
+    // ==========================================
+    // 3. CAPA NEURAL (CANVAS)
+    // ==========================================
     const neuralCanvas = document.getElementById('neural-canvas');
     const nCtx = neuralCanvas.getContext('2d');
     let nW, nH, nodes = [], mouse = { x: null, y: null };
+    
     function initNeuralVeil() { 
-        if(nodes.length === 0) { resizeNeural(); window.addEventListener('resize', resizeNeural); window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; }); createNodes(); }
+        if(nodes.length === 0) { 
+            resizeNeural(); 
+            window.addEventListener('resize', resizeNeural); 
+            window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; }); 
+            createNodes(); 
+        }
         animateNeural(); 
     }
+    
     function resizeNeural() { nW = neuralCanvas.width = window.innerWidth; nH = neuralCanvas.height = window.innerHeight; }
+    
     class Node {
         constructor() { this.x = Math.random()*nW; this.y = Math.random()*nH; this.vx = (Math.random()-0.5)*0.5; this.vy = (Math.random()-0.5)*0.5; this.size = Math.random()*3+2; this.color = Math.random()>0.7?'rgba(0,240,255,':'rgba(255,255,255,'; }
         update() { this.x+=this.vx; this.y+=this.vy; if(this.x<0||this.x>nW)this.vx*=-1; if(this.y<0||this.y>nH)this.vy*=-1; }
         draw() { let dx=mouse.x-this.x; let dy=mouse.y-this.y; let dist=Math.sqrt(dx*dx+dy*dy); if(dist<250){ let alpha=(250-dist)/250; nCtx.beginPath(); nCtx.arc(this.x,this.y,this.size,0,Math.PI*2); nCtx.fillStyle=this.color+alpha*0.8+')'; nCtx.fill(); } }
     }
+    
     function createNodes() { nodes=[]; for(let i=0; i<150; i++) nodes.push(new Node()); }
     
     function animateNeural() { 
         if (!isSceneActive) return; 
-
-        // SINCRONIZACIÓN FINAL
+        
+        // Sync check
         if(audioBtn && video) {
             if(video.muted && audioBtn.classList.contains('active')) {
                 audioBtn.classList.remove('active');
             }
         }
         
-        nCtx.clearRect(0,0,nW,nH); nodes.forEach(node=>{node.update();node.draw();}); 
+        nCtx.clearRect(0,0,nW,nH); 
+        nodes.forEach(node=>{node.update();node.draw();}); 
         neuralAnimId = requestAnimationFrame(animateNeural); 
     }
 
+    // ==========================================
     // 4. CONTROLADOR DE CLIC (AUDIO)
+    // ==========================================
     if(audioBtn) {
-        // Clonar para limpiar eventos previos (opcional pero recomendado si hay duplicados)
         const newAudioBtn = audioBtn.cloneNode(true);
         audioBtn.parentNode.replaceChild(newAudioBtn, audioBtn);
         
         newAudioBtn.addEventListener('click', (e) => {
             e.stopPropagation(); 
-            // Invertimos estado
+            // CORRECCIÓN: Lógica de toggle arreglada
             if (video.muted) {
-                video.muted = true;
+                video.muted = false; // AHORA SÍ activamos sonido
                 video.volume = 1;
                 newAudioBtn.classList.add('active');
             } else {
@@ -1001,19 +988,20 @@
             }
         });
     }
+
+    // ==========================================
     // 5. OBSERVER
+    // ==========================================
     const sectionObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 isSceneActive = true;
                 if (hasIntroFinished) {
-                    // Regreso
                     if(video && video.paused) { video.muted = true; video.play().catch(()=>{}); }
                     animateNeural();
                     if(preloader) preloader.style.display = 'none';
                     if(starContainer) starContainer.style.display = 'none';
                 } else {
-                    // Inicio
                     if (loadProgress < 100 && !loadAnimId) { animateStars(); simLoad(); }
                 }
             } else {
@@ -1026,12 +1014,12 @@
             }
         });
     }, { threshold: 0.1 }); 
+
     const target = document.getElementById(containerId);
     if(target) sectionObserver.observe(target);
 
 } // CIERRE BLOQUE
 </script>
-
         // ==========================================================================================================================================================
         // SCRIPT ESCENA 2
         // ===========================================================================================================================================================
