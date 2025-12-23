@@ -218,9 +218,267 @@
         <!-- ========================================= -->
         <!-- ESCENA 2 -->
         <!-- ========================================= -->
+
+    
         
-          
         
+        
+            /* --- ESCENARIO PRINCIPAL --- */
+            .hero-immersive {
+                position: relative;
+                width: 100vw;
+                height: 100vh;
+            }
+        
+            .video-container2 {
+                position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            }
+        
+            /* --- CAPA DE VIDEO --- */
+            video {
+                position: absolute;
+                top: 0; left: 0;
+                width: 100%; height: 100%;
+                object-fit: cover; /* Mantiene la inmersión sin deformar */
+                opacity: 0;
+                transition: opacity 0.6s ease; /* Crossfade suave nativo + GSAP helper */
+                will-change: opacity;
+            }
+        
+            video.active {
+                opacity: 1;
+                z-index: 2;
+            }
+        
+            video.hidden {
+                opacity: 0;
+                z-index: 1;
+            }
+        
+            /* --- CAPA DE INTERACCIÓN (SVG INVISIBLE) --- */
+            .interaction-layer {
+                position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+                z-index: 10;
+                /* Se mantiene oculta hasta que arranca el loop */
+                visibility: hidden; 
+            }
+        
+            svg {
+                width: 100%; height: 100%;
+                /* IMPORTANTE: preserveAspectRatio asegura que el SVG se estire igual que el video (object-fit: cover) */
+                /* Si el video es 16:9, usar 'xMidYMid slice' es crucial */
+            }
+        
+            .interaction-zone {
+                fill: transparent; /* Totalmente invisible */
+                cursor: pointer;
+                pointer-events: auto;
+                transition: fill 0.3s ease;
+            }
+        
+            /* Feedback visual sutil al usuario (Opcional) */
+            /* Esto ayuda a descubrir que es interactivo sin romper la inmersión */
+            .interaction-zone:hover {
+                fill: rgba(255, 255, 255, 0.05); 
+            }
+        
+            /* Clase base para los videos de hover */
+            .hover-video {
+                opacity: 0;
+                z-index: 3; /* Encima del loop (z-index: 2) */
+                transition: none; /* Dejaremos que GSAP maneje la transición */
+            }
+            
+            /* Ajuste de capas */
+            #vid-loop.active { z-index: 2; }
+            #vid-transition.active { z-index: 5; } /* La transición final siempre arriba */
+        
+            /* --- CAPA CONTENEDORA DE TEXTOS --- */
+        /* Esta capa cubre toda la pantalla pero deja pasar los clics (pointer-events: none) */
+        .text-overlay-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 20; /* CRUCIAL: Debe ser mayor que el SVG (10) y los Videos (1-5) */
+            pointer-events: none; 
+        }
+        
+        /* --- ESTILO PREMIUM: GLASSMORPHISM + MOVING GOLD BORDER --- */
+        .menu-label {
+            /* POSICIONAMIENTO */
+            position: absolute;
+            cursor: pointer;
+            pointer-events: auto;
+            opacity: 0;
+            transform: translateY(20px);
+            
+            /* TIPOGRAFÍA */
+            font-family: 'Cinzel', serif;
+            color: #ffffff; /* Oro pálido para el texto */
+            font-size: 1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            
+            /* ESTRUCTURA PARA EL BORDE ANIMADO */
+            position: absolute;
+            overflow: hidden; /* Recorta el brillo sobrante */
+            border-radius: 12px; /* Redondeo externo */
+            padding: 14px 28px; /* Espacio interno */
+            
+            /* Importante: Quitamos bordes y fondos directos aquí porque los pseudo-elementos lo harán */
+            background: transparent; 
+            border: none;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); /* Sombra profunda */
+        
+            /* Transición suave para movimiento */
+            transition: transform 0.3s ease, letter-spacing 0.3s ease, box-shadow 0.3s ease;
+            
+            /* Aseguramos que el texto esté encima de los fondos */
+            z-index: 20;
+            display: flex; justify-content: center; align-items: center;
+        }
+            
+        /* 1. LA SERPIENTE DORADA (El fondo que gira) */
+        .menu-label::before {
+            content: '';
+            position: absolute;
+            width: 200%;     /* Mucho más grande que la caja para cubrir al girar */
+            height: 200%;
+            top: -50%; left: -50%; /* Centrado */
+            z-index: -2;     /* Al fondo de todo */
+            
+            /* EL DEGRADADO MÁGICO */
+            background: conic-gradient(
+                transparent, 
+                transparent, 
+                transparent, 
+                #b8860b 20%, /* Oro Oscuro */
+                #FFD700      /* Oro Brillante (La punta de la serpiente) */
+            );
+            
+            /* La animación de giro infinito */
+            animation: rotate-border 4s linear infinite;
+        }
+        
+        /* 2. EL VIDRIO ESMERILADO (La tapa que oculta el centro) */
+        .menu-label::after {
+            content: '';
+            position: absolute;
+            z-index: -1; /* Encima del borde dorado, debajo del texto */
+            
+            /* INSET define el grosor del borde (aquí 1.5px) */
+            inset: 2px; 
+            
+            /* Estilo del Vidrio */
+            background: rgba(20, 20, 25, 0.7); /* Fondo oscuro semitransparente */
+            backdrop-filter: blur(10px);       /* Desenfoque */
+            -webkit-backdrop-filter: blur(10px);
+            
+            border-radius: 10px; /* Un poco menos que el padre para encajar */
+        }
+        
+        /* 3. HOVER (Efecto al interactuar) */
+        .menu-label:hover {
+            transform: scale(1.05) translateY(0); /* Zoom sutil */
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3); /* Resplandor dorado */
+            text-shadow: 0 0 8px rgba(255, 215, 0, 0.8); /* Texto brilla */
+            letter-spacing: 3px;
+        }
+        
+        /* 4. DEFINICIÓN DE LA ANIMACIÓN */
+        @keyframes rotate-border {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+            
+        /* --- POSICIONES (COORDENADAS) --- */
+        /* Ajusta estos porcentajes (top, left, right, bottom) para mover los textos */
+        
+        /* TEXTO AMARILLO (Para la cinta de la derecha) */
+        #text-yellow { 
+            top: 30%; 
+            right: 15%; 
+            text-align: right; 
+        }
+        
+        /* TEXTO AZUL (Para la cinta de la izquierda/arriba) */
+        #text-blue { 
+            top: 25%; 
+            left: 18%; 
+        }
+        
+        /* TEXTO ROJO (Para la cinta de abajo/derecha) */
+        #text-red { 
+            bottom: 25%; 
+            right: 20%; 
+            text-align: right; 
+        }
+        
+        /* TEXTO VERDE (Para la cinta de abajo/izquierda) */
+        #text-green { 
+            bottom: 20%; 
+            left: 20%; 
+        }
+        
+            .hero-cta {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 15; /* Debajo del menú, encima del video */
+            text-align: center;
+            color: white;
+            pointer-events: none; /* Dejar pasar clics */
+            transition: opacity 0.5s ease;
+        }
+        
+        .hero-cta h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.8);
+            letter-spacing: 4px;
+        }
+        
+        .hero-cta p {
+            font-family: 'Inter', sans-serif; /* O sans-serif limpia */
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            opacity: 0.8;
+            background: rgba(0,0,0,0.3); /* Fondo muy sutil para leer */
+            padding: 8px 16px;
+            border-radius: 20px;
+            display: inline-block;
+            backdrop-filter: blur(4px);
+        }
+        
+            /* Ocultar cursor nativo en el contenedor (opcional, arriesgado en UX) */
+        /* .hero-immersive { cursor: none; } */
+        
+        .custom-cursor {
+            position: fixed;
+            top: 0; left: 0;
+            width: 40px; height: 40px;
+            border: 1px solid rgba(255,255,255,0.5);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            transition: transform 0.1s ease, background 0.2s;
+            mix-blend-mode: difference; /* Se ve sobre blanco y negro */
+        }
+        
+        .custom-cursor.active {
+            transform: translate(-50%, -50%) scale(1.5);
+            background: rgba(255,255,255,0.2);
+            border-color: white;
+        }
+            
     </style>
 </head>
 <body style="background-color: #000000;">
@@ -240,7 +498,7 @@
     </div>
 
     <main id="master-container">
-         <section id="scene-material" class="scene active">
+       <section id="scene-material" class="scene active">
                  <!-- ========================================= -->
                 <!-- ESCENA 1: HERO -->
                 <!-- ========================================= -->
@@ -362,9 +620,9 @@
         <!-- ========================================= -->
 
     
-    <section id="scene-digital" class="scene hidden hero-inmersive">
+      <section id="scene-digital" class="scene hidden hero-inmersive">
              <!-- CAPA DE VIDEOS -->
-            <div class="video-container">
+            <div class="video-container2">
                 <!-- 1. INTRO -->
                 <video id="vid-intro" class="active" muted playsinline preload="auto">
                     <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/Tejido.mp4" type="video/mp4">
@@ -463,328 +721,586 @@
 
 
     
-    <script>
-        // ==========================================
-        // 1. ESTRELLAS: 2D Canvas (CONTINUIDAD FLUIDA)
-        // ==========================================
-        const starCanvas = document.getElementById('loader-canvas');
-        const sCtx = starCanvas.getContext('2d');
-        const starContainer = document.getElementById('loader-canvas-container');
-        let width, height, stars = [], loadProgress = 0, isWarping = false;
+    
         
-        function initStars() {
-            width = starCanvas.width = window.innerWidth; 
-            height = starCanvas.height = window.innerHeight;
-            stars = [];
-            for(let i=0; i<400; i++) {
-                stars.push({
-                    x: Math.random() * width - width / 2,
-                    y: Math.random() * height - height / 2,
-                    z: Math.random() * width,
-                    color: Math.random() > 0.5 ? '#D4AF37' : '#00F0FF',
-                    size: Math.random() * 2
-                });
-            }
-        }
-        
-        let starAnimId;
-        function animateStars() {
-            // Fondo ligeramente transparente en Warp para crear estelas, pero siempre base negra
-            sCtx.fillStyle = isWarping ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 1)'; 
-            sCtx.fillRect(0, 0, width, height);
+         // ==========================================================================================================================================================
+        // SCRIPT ESCENA 1
+        // ===========================================================================================================================================================
+            <script>
+            { // BLOQUE DE AISLAMIENTO SCENE 1
             
-            stars.forEach(s => {
-                let speed = 2 + (loadProgress * 2.0);
-                if(isWarping) speed = 80; // Aceleración suave
+                const containerId = 'scene-material'; 
+                let isSceneActive = true; 
+                let hasIntroFinished = false; // Bandera clave: ¿Ya vimos la intro?
                 
-                s.z -= speed;
-                if (s.z <= 0) { 
-                    s.z = width; 
-                    s.x = Math.random() * width - width / 2; 
-                    s.y = Math.random() * height - height / 2; 
-                }
-                
-                let x = (s.x / s.z) * width + width / 2;
-                let y = (s.y / s.z) * height + height / 2;
-                
-                let r = (1 - s.z / width) * s.size * 2;
-                if(isWarping) r *= 1.5; 
-
-                sCtx.beginPath();
-                sCtx.arc(x, y, r, 0, Math.PI*2);
-                sCtx.fillStyle = s.color;
-                sCtx.fill();
-            });
-            starAnimId = requestAnimationFrame(animateStars);
-        }
-
-        window.addEventListener('resize', initStars);
-        initStars();
-        animateStars();
-
-        // LOGICA DE CARGA & INICIO DE FUSIÓN
-        const loadText = document.getElementById('loadText');
-        const loadFill = document.getElementById('loadFill');
-        const loadWrap = document.getElementById('loadLineWrap');
-        const preloader = document.getElementById('preloader');
-
-        function simLoad() {
-            let increment = Math.random() * 0.5; 
-            loadProgress += increment;
+                // IDs de animación para poder cancelarlas y ahorrar batería
+                let starAnimId, neuralAnimId, tunnelAnimId, loadAnimId;
             
-            if (loadProgress >= 100) {
-                loadProgress = 100;
-                isWarping = true; // Activar Warp
-                preloader.classList.add('text-fade-out');
+                // Referencias DOM globales en este scope
+                const starCanvas = document.getElementById('loader-canvas');
+                const starContainer = document.getElementById('loader-canvas-container');
+                const video = document.getElementById('bg-video');
+                const preloader = document.getElementById('preloader');
                 
-                // ARRANCAR TÚNEL INMEDIATAMENTE
-                initTunnelAnimation(); 
-
-            } else {
-                loadText.innerText = Math.floor(loadProgress) + '%';
-                loadWrap.style.width = Math.min(loadProgress * 3, 250) + 'px'; 
-                loadFill.style.width = loadProgress + '%';
-                requestAnimationFrame(simLoad);
-            }
-        }
-        requestAnimationFrame(simLoad);
-
-
-        // ==========================================
-        // 2. TÚNEL DE HUMO & VIDEO TIME-FREEZE
-        // ==========================================
-        function initTunnelAnimation() {
-            const CONFIG = {
-                duration: 4.5,            // Duración viaje
-                fadeStart: 3.0,           // Inicio revelación visual
-                fadeEnd: 4.0,             // Fin del humo
-                speed: 3500,              // Velocidad de nubes
-                innerRadius: 140, radiusVar: 220, count: 350, stretch: 12
-            };
-
-            const video = document.getElementById('bg-video');
-            video.pause(); video.currentTime = 0; // Video congelado
-
-            let scene, camera, renderer, clouds = [], clock = new THREE.Clock();
-            let hasTriggeredFade = false;
-            let hasTriggeredPlay = false;
-
-            const textureLoader = new THREE.TextureLoader();
-            textureLoader.load("https://raw.githubusercontent.com/navin-navi/codepen-assets/master/images/smoke.png", (texture) => {
-                
-                // 1. Mostrar WebGL (sobre estrellas)
-                const glContainer = document.getElementById("webgl-container");
-                glContainer.classList.add('active'); 
-                
-                // 2. Desvanecer Estrellas
-                setTimeout(() => {
-                    starContainer.classList.add('fade-out');
-                    setTimeout(() => cancelAnimationFrame(starAnimId), 2000); 
-                }, 800);
-
-                scene = new THREE.Scene();
-                camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 1, 10000);
-                camera.position.z = 1000;
-
-                const ambient = new THREE.AmbientLight(0x555555); scene.add(ambient);
-                const light = new THREE.PointLight(0xffffff, 5, 1000); light.position.set(0,0,-2000); scene.add(light);
-
-                const mat = new THREE.MeshLambertMaterial({
-                    map: texture, transparent: true, opacity: 1, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide
-                });
-                const geo = new THREE.PlaneBufferGeometry(400,400);
-
-                for(let i=0; i<CONFIG.count; i++) {
-                    let c = new THREE.Mesh(geo, mat.clone());
-                    let z = (Math.random()*10000)-5000;
-                    let a = Math.random()*Math.PI*2;
-                    let r = CONFIG.innerRadius + (Math.random()*CONFIG.radiusVar);
-                    c.position.set(Math.cos(a)*r, Math.sin(a)*r, z);
-                    c.rotation.z = Math.random()*360;
-                    c.scale.set(1.5, 1.5, CONFIG.stretch);
-                    if(Math.random()>0.5) c.material.color.setHex(0x00aaff); else c.material.color.setHex(0xffaa00);
-                    c.userData = { r: r, a: a };
-                    clouds.push(c); scene.add(c);
-                }
-
-                renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "high-performance" });
-                renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.setClearColor(0x000000, 0); 
-                glContainer.appendChild(renderer.domElement);
-
-                function animate() {
-                    let elapsed = clock.getElapsedTime();
-                    
-                    camera.position.z -= CONFIG.speed * 0.016;
-                    clouds.forEach(c => { if(c.position.z > camera.position.z + 500) c.position.z -= 10000; });
-                    camera.position.x = (Math.random()-0.5)*10; camera.position.y = (Math.random()-0.5)*10;
-                    scene.rotation.z += 0.003;
-
-                    // A. FADE VISUAL (3.0s)
-                    if (elapsed > CONFIG.fadeStart) {
-                        if (!hasTriggeredFade) {
-                            document.body.classList.add('reveal-video');
-                            hasTriggeredFade = true;
-                        }
-
-                        let progress = (elapsed - CONFIG.fadeStart) / (CONFIG.fadeEnd - CONFIG.fadeStart);
-                        progress = Math.min(progress, 1);
-                        let expansion = Math.pow(progress, 3) * 3000;
-
-                        clouds.forEach(c => {
-                            let r = c.userData.r + expansion;
-                            c.position.x = Math.cos(c.userData.a) * r;
-                            c.position.y = Math.sin(c.userData.a) * r;
-                            c.scale.z = THREE.MathUtils.lerp(CONFIG.stretch, 1, progress);
-                            c.material.opacity = 1 * (1 - progress);
+                // ==========================================
+                // 1. ESTRELLAS (Solo para el inicio)
+                // ==========================================
+                const sCtx = starCanvas ? starCanvas.getContext('2d') : null;
+                let width, height, stars = [], loadProgress = 0, isWarping = false;
+            
+                function initStars() {
+                    if(!starCanvas) return;
+                    width = starCanvas.width = window.innerWidth; 
+                    height = starCanvas.height = window.innerHeight;
+                    stars = [];
+                    for(let i=0; i<400; i++) {
+                        stars.push({
+                            x: Math.random() * width - width / 2,
+                            y: Math.random() * height - height / 2,
+                            z: Math.random() * width,
+                            color: Math.random() > 0.5 ? '#D4AF37' : '#00F0FF',
+                            size: Math.random() * 2
                         });
                     }
-
-                    // B. PLAY VIDEO (3.5s)
-                    if (elapsed > (CONFIG.fadeEnd - 0.5) && !hasTriggeredPlay) {
-                        const pref = localStorage.getItem('ululato_sound_pref');
-                        // Si el usuario ya activó el sonido antes, aseguramos que suene
-                        if (pref === 'on') { video.muted = false; video.volume = 1; audioBtn.classList.add('active'); }
-                        video.play().catch(e => console.log("Auto-play blocked pending user interaction"));
-                        hasTriggeredPlay = true;
+                }
+                
+                // Inicializamos estrellas solo si la intro no ha terminado
+                if (!hasIntroFinished) {
+                    initStars();
+                    window.addEventListener('resize', initStars);
+                }
+            
+                function animateStars() {
+                    if (!isSceneActive || hasIntroFinished) return; // Freno de seguridad
+            
+                    sCtx.fillStyle = isWarping ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 1)'; 
+                    sCtx.fillRect(0, 0, width, height);
+                    
+                    stars.forEach(s => {
+                        let speed = 2 + (loadProgress * 2.0);
+                        if(isWarping) speed = 80; 
+                        
+                        s.z -= speed;
+                        if (s.z <= 0) { 
+                            s.z = width; s.x = Math.random() * width - width / 2; s.y = Math.random() * height - height / 2; 
+                        }
+                        
+                        let x = (s.x / s.z) * width + width / 2;
+                        let y = (s.y / s.z) * height + height / 2;
+                        let r = (1 - s.z / width) * s.size * 2;
+                        if(isWarping) r *= 1.5; 
+            
+                        sCtx.beginPath(); sCtx.arc(x, y, r, 0, Math.PI*2); sCtx.fillStyle = s.color; sCtx.fill();
+                    });
+                    starAnimId = requestAnimationFrame(animateStars);
+                }
+            
+                // LOGICA DE CARGA
+                const loadText = document.getElementById('loadText');
+                const loadFill = document.getElementById('loadFill');
+                const loadWrap = document.getElementById('loadLineWrap');
+            
+                function simLoad() {
+                    if (!isSceneActive || hasIntroFinished) return;
+            
+                    let increment = Math.random() * 0.8; 
+                    loadProgress += increment;
+                    
+                    if (loadProgress >= 100) {
+                        loadProgress = 100;
+                        isWarping = true;
+                        if(preloader) preloader.classList.add('text-fade-out');
+                        initTunnelAnimation(); 
+                    } else {
+                        if(loadText) loadText.innerText = Math.floor(loadProgress) + '%';
+                        if(loadWrap) loadWrap.style.width = Math.min(loadProgress * 3, 250) + 'px'; 
+                        if(loadFill) loadFill.style.width = loadProgress + '%';
+                        loadAnimId = requestAnimationFrame(simLoad);
                     }
-
-                    // C. FINALIZAR
-                    if (elapsed >= CONFIG.duration) {
-                        finishIntro(renderer);
-                        return;
+                }
+            
+                // ==========================================
+                // 2. TÚNEL DE HUMO (Three.js)
+                // ==========================================
+                let renderer, scene, camera, clock;
+                
+                function initTunnelAnimation() {
+                    if (renderer || hasIntroFinished) return; // Doble chequeo
+            
+                    const CONFIG = { duration: 4.5, fadeStart: 3.0, fadeEnd: 4.0, speed: 3500, innerRadius: 140, radiusVar: 220, count: 350, stretch: 12 };
+                    
+                    const textureLoader = new THREE.TextureLoader();
+                    textureLoader.load("https://raw.githubusercontent.com/navin-navi/codepen-assets/master/images/smoke.png", (texture) => {
+                        const glContainer = document.getElementById("webgl-container");
+                        if(!glContainer) return; // Si ya no existe, salir
+            
+                        glContainer.classList.add('active'); 
+                        
+                        // Ocultar estrellas suavemente
+                        setTimeout(() => { 
+                            if(starContainer) starContainer.classList.add('fade-out');
+                            cancelAnimationFrame(starAnimId); 
+                        }, 800);
+            
+                        scene = new THREE.Scene();
+                        camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 1, 10000);
+                        camera.position.z = 1000;
+                        clock = new THREE.Clock();
+            
+                        const ambient = new THREE.AmbientLight(0x555555); scene.add(ambient);
+                        const light = new THREE.PointLight(0xffffff, 5, 1000); light.position.set(0,0,-2000); scene.add(light);
+                        const mat = new THREE.MeshLambertMaterial({ map: texture, transparent: true, opacity: 1, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+                        const geo = new THREE.PlaneBufferGeometry(400,400);
+                        
+                        let clouds = [];
+                        for(let i=0; i<CONFIG.count; i++) {
+                            let c = new THREE.Mesh(geo, mat.clone());
+                            let z = (Math.random()*10000)-5000;
+                            let a = Math.random()*Math.PI*2;
+                            let r = CONFIG.innerRadius + (Math.random()*CONFIG.radiusVar);
+                            c.position.set(Math.cos(a)*r, Math.sin(a)*r, z);
+                            c.rotation.z = Math.random()*360;
+                            c.scale.set(1.5, 1.5, CONFIG.stretch);
+                            if(Math.random()>0.5) c.material.color.setHex(0x00aaff); else c.material.color.setHex(0xffaa00);
+                            c.userData = { r: r, a: a };
+                            clouds.push(c); scene.add(c);
+                        }
+            
+                        renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "high-performance" });
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                        renderer.setClearColor(0x000000, 0); 
+                        glContainer.appendChild(renderer.domElement);
+            
+                        function animate() {
+                            if (!isSceneActive || hasIntroFinished) return;
+            
+                            let elapsed = clock.getElapsedTime();
+                            
+                            // Lógica de movimiento humo...
+                            camera.position.z -= CONFIG.speed * 0.016;
+                            clouds.forEach(c => { if(c.position.z > camera.position.z + 500) c.position.z -= 10000; });
+                            camera.position.x = (Math.random()-0.5)*10; camera.position.y = (Math.random()-0.5)*10;
+                            scene.rotation.z += 0.003;
+            
+                            // FADE IN
+                            if (elapsed > CONFIG.fadeStart && !document.body.classList.contains('reveal-video')) {
+                                document.body.classList.add('reveal-video');
+                            }
+                            
+                            // EXPANSION
+                            if (elapsed > CONFIG.fadeStart) {
+                                 let progress = (elapsed - CONFIG.fadeStart) / (CONFIG.fadeEnd - CONFIG.fadeStart);
+                                 progress = Math.min(progress, 1);
+                                 let expansion = Math.pow(progress, 3) * 3000;
+                                 clouds.forEach(c => {
+                                    let r = c.userData.r + expansion;
+                                    c.position.x = Math.cos(c.userData.a) * r;
+                                    c.position.y = Math.sin(c.userData.a) * r;
+                                    c.scale.z = THREE.MathUtils.lerp(CONFIG.stretch, 1, progress);
+                                    c.material.opacity = 1 * (1 - progress);
+                                });
+                            }
+            
+                            // PLAY VIDEO (Si aún no suena)
+                            if (elapsed > (CONFIG.fadeEnd - 0.5) && video.paused) {
+                                video.play().catch(e=>{});
+                            }
+            
+                            // FIN ABSOLUTO DE LA INTRO
+                            if (elapsed >= CONFIG.duration) {
+                                finishIntro();
+                                return;
+                            }
+                            
+                            renderer.render(scene, camera);
+                            tunnelAnimId = requestAnimationFrame(animate);
+                        }
+                        animate();
+                    });
+                }
+            
+                function finishIntro() {
+                    hasIntroFinished = true; // <--- AQUÍ MARCAMOS EL FIN DEFINITIVO
+                    
+                    document.body.classList.add('loaded'); 
+                    
+                    // LIMPIEZA TOTAL: Eliminamos WebGL y Estrellas del DOM para que no consuman nada
+                    const glContainer = document.getElementById('webgl-container');
+                    if(glContainer) {
+                        glContainer.style.transition = 'opacity 1s';
+                        glContainer.style.opacity = '0';
+                        setTimeout(() => { 
+                            if(renderer) renderer.dispose(); 
+                            glContainer.remove(); // Se elimina del HTML
+                        }, 1000);
                     }
                     
-                    renderer.render(scene, camera);
-                    requestAnimationFrame(animate);
-                }
-                animate();
-            });
-        }
-
-        function finishIntro(renderer) {
-            document.body.classList.add('loaded'); // Muestra UI
-            initNeuralVeil(); 
-            const container = document.getElementById('webgl-container');
-            container.style.opacity = '0';
-            setTimeout(() => { renderer.dispose(); container.remove(); }, 1000);
-        }
-
-        // ==========================================
-        // 3. CAPA NEURAL
-        // ==========================================
-        const neuralCanvas = document.getElementById('neural-canvas');
-        const nCtx = neuralCanvas.getContext('2d');
-        let nW, nH, nodes = [], mouse = { x: null, y: null };
-        function initNeuralVeil() { resizeNeural(); window.addEventListener('resize', resizeNeural); window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; }); createNodes(); animateNeural(); }
-        function resizeNeural() { nW = neuralCanvas.width = window.innerWidth; nH = neuralCanvas.height = window.innerHeight; }
-        class Node {
-            constructor() { this.x = Math.random() * nW; this.y = Math.random() * nH; this.vx = (Math.random() - 0.5) * 0.5; this.vy = (Math.random() - 0.5) * 0.5; this.size = Math.random() * 3 + 2; this.color = Math.random() > 0.7 ? 'rgba(0, 240, 255,' : 'rgba(255, 255, 255,'; }
-            update() { this.x += this.vx; this.y += this.vy; if(this.x < 0 || this.x > nW) this.vx *= -1; if(this.y < 0 || this.y > nH) this.vy *= -1; }
-            draw() {
-                let dx = mouse.x - this.x; let dy = mouse.y - this.y; let dist = Math.sqrt(dx*dx + dy*dy);
-                if(dist < 250) {
-                    let alpha = (250 - dist) / 250; nCtx.beginPath(); nCtx.arc(this.x, this.y, this.size, 0, Math.PI*2); nCtx.fillStyle = this.color + (alpha * 0.8) + ')'; nCtx.fill();
-                    nodes.forEach(other => { let odx = this.x - other.x; let ody = this.y - other.y; let odist = Math.sqrt(odx*odx + ody*ody); if(odist < 120) { nCtx.beginPath(); nCtx.moveTo(this.x, this.y); nCtx.lineTo(other.x, other.y); nCtx.strokeStyle = 'rgba(255, 255, 255,' + (alpha * (1 - odist/120) * 0.6) + ')'; nCtx.stroke(); } });
-                }
-            }
-        }
-        function createNodes() { nodes = []; for(let i=0; i<150; i++) nodes.push(new Node()); }
-        function animateNeural() { nCtx.clearRect(0, 0, nW, nH); nodes.forEach(node => { node.update(); node.draw(); }); requestAnimationFrame(animateNeural); }
-
-        // ==========================================
-        // 4. UI INTERACTIONS (Menú, Audio, Cursor)
-        // ==========================================
-        const title1 = document.getElementById('glitchTitle1'), title2 = document.getElementById('glitchTitle2');
-        let lastX = 0, skew = 0;
-        window.addEventListener('mousemove', (e) => {
-            let velocity = e.clientX - lastX; lastX = e.clientX; skew = Math.max(Math.min(velocity * 0.5, 10), -10);
-            let rX = skew * 2; let cX = -skew * 2; const shadowStyle = `${rX}px 0 0 rgba(255, 50, 50, 0.6), ${cX}px 0 0 rgba(0, 240, 255, 0.6)`;
-            if (Math.abs(skew) > 0.5) { title1.style.textShadow = shadowStyle; title2.style.textShadow = shadowStyle; } 
-            else { title1.style.textShadow = "0 4px 30px rgba(0,0,0,0.8)"; title2.style.textShadow = "0 4px 30px rgba(0,0,0,0.8)"; }
-        });
-
-        const menu = document.getElementById('menuCurtain'), openBtn = document.getElementById('openMenu'), closeBtn = document.getElementById('closeMenu'), atmosphere = document.getElementById('menuAtmosphere'), links = document.querySelectorAll('.menu-link');
-        openBtn.addEventListener('click', () => { menu.classList.add('active'); });
-        closeBtn.addEventListener('click', () => { menu.classList.remove('active'); });
-        links.forEach(l => {
-            l.addEventListener('mouseenter', () => { atmosphere.style.setProperty('--active-color', l.getAttribute('data-color')); atmosphere.style.opacity = '1'; atmosphere.style.transform = 'scale(1.1)'; });
-            l.addEventListener('mouseleave', () => { atmosphere.style.opacity = '0'; atmosphere.style.transform = 'scale(1)'; });
-        });
-
-        // --- 4. AUDIO INTELLIGENCE (NUEVO SISTEMA) ---
-        const audioBtn = document.getElementById('audioBtn');
-        const video = document.getElementById('bg-video');
-
-        // Función para hacer Fade In suave del audio
-        function fadeAudioIn() {
-            if (!video.muted) return; // Si ya suena, no hacer nada
+                    if(starContainer) starContainer.style.display = 'none'; // Ocultar contenedor estrellas
             
-            video.muted = false;
-            video.volume = 0;
-            audioBtn.classList.add('active');
-            
-            // Guardar preferencia en memoria del navegador
-            localStorage.setItem('ululato_sound_pref', 'on');
-
-            let fade = setInterval(() => {
-                if (video.volume < 0.9) {
-                    video.volume += 0.05;
-                } else {
-                    clearInterval(fade);
+                    // Iniciamos el efecto "idle" (Neural Veil)
+                    initNeuralVeil(); 
                 }
-            }, 100);
-        }
+            
+                // ==========================================
+                // 3. CAPA NEURAL (Efecto sutil sobre video)
+                // ==========================================
+                const neuralCanvas = document.getElementById('neural-canvas');
+                const nCtx = neuralCanvas.getContext('2d');
+                let nW, nH, nodes = [], mouse = { x: null, y: null };
+            
+                function initNeuralVeil() { 
+                    if(nodes.length === 0) { // Crear solo una vez
+                        resizeNeural(); 
+                        window.addEventListener('resize', resizeNeural); 
+                        window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; }); 
+                        createNodes(); 
+                    }
+                    animateNeural(); 
+                }
+                
+                function resizeNeural() { nW = neuralCanvas.width = window.innerWidth; nH = neuralCanvas.height = window.innerHeight; }
+                
+                class Node {
+                    constructor() { this.x = Math.random() * nW; this.y = Math.random() * nH; this.vx = (Math.random() - 0.5) * 0.5; this.vy = (Math.random() - 0.5) * 0.5; this.size = Math.random() * 3 + 2; this.color = Math.random() > 0.7 ? 'rgba(0, 240, 255,' : 'rgba(255, 255, 255,'; }
+                    update() { this.x += this.vx; this.y += this.vy; if(this.x < 0 || this.x > nW) this.vx *= -1; if(this.y < 0 || this.y > nH) this.vy *= -1; }
+                    draw() { 
+                         let dx = mouse.x - this.x; let dy = mouse.y - this.y; let dist = Math.sqrt(dx*dx + dy*dy);
+                         if(dist < 250) {
+                             let alpha = (250 - dist) / 250; nCtx.beginPath(); nCtx.arc(this.x, this.y, this.size, 0, Math.PI*2); nCtx.fillStyle = this.color + (alpha * 0.8) + ')'; nCtx.fill();
+                         }
+                    }
+                }
+                function createNodes() { nodes = []; for(let i=0; i<150; i++) nodes.push(new Node()); }
+                
+                function animateNeural() { 
+                    if (!isSceneActive) return; 
+                    nCtx.clearRect(0, 0, nW, nH); 
+                    nodes.forEach(node => { node.update(); node.draw(); }); 
+                    neuralAnimId = requestAnimationFrame(animateNeural); 
+                }
+            
+                // ==========================================
+                // 4. OBSERVER: EL CONTROLADOR FINAL
+                // ==========================================
+                const sectionObserver = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        
+                        // ---> ENTRAR EN ESCENA
+                        if (entry.isIntersecting) {
+                            isSceneActive = true;
+                            
+                            if (hasIntroFinished) {
+                                // CASO: VOLVEMOS DE OTRA SECCIÓN (NO INTRO)
+                                console.log("Hero: Regreso del usuario. Solo Video.");
+                                
+                                // 1. Asegurar video play
+                                if(video && video.paused) video.play().catch(()=>{});
+                                
+                                // 2. Activar capa neural (opcional, si la quieres quitar comenta esta linea)
+                                animateNeural();
+                                
+                                // 3. GARANTÍA: Ocultar elementos de carga por si acaso
+                                if(preloader) preloader.style.display = 'none';
+                                if(starContainer) starContainer.style.display = 'none';
+            
+                            } else {
+                                // CASO: PRIMERA VEZ
+                                console.log("Hero: Primera carga. Iniciando secuencia.");
+                                if (loadProgress < 100 && !loadAnimId) {
+                                    animateStars();
+                                    simLoad(); 
+                                }
+                            }
+            
+                        // ---> SALIR DE ESCENA
+                        } else {
+                            isSceneActive = false;
+                            
+                            // Detener todo consumo de CPU
+                            cancelAnimationFrame(starAnimId);
+                            cancelAnimationFrame(tunnelAnimId);
+                            cancelAnimationFrame(neuralAnimId);
+                            cancelAnimationFrame(loadAnimId);
+                            
+                            // Pausar video
+                            if(video && !video.paused) video.pause();
+                        }
+                    });
+                }, { threshold: 0.1 }); 
+            
+                const target = document.getElementById(containerId);
+                if(target) sectionObserver.observe(target);
+            
+            } // CIERRE BLOQUE
+            </script>
 
-        // Lógica del Botón
-        audioBtn.addEventListener('click', (e) => {
-            e.stopPropagation(); // Evitar que dispare el click global
-            if (video.muted) {
-                fadeAudioIn();
-            } else {
-                video.muted = true;
-                audioBtn.classList.remove('active');
-                localStorage.setItem('ululato_sound_pref', 'off');
-            }
-        });
 
-        // 1. INTENTO DE AUTOPLAY BASADO EN MEMORIA (Al cargar)
-        function tryAutoPlay() {
-            const pref = localStorage.getItem('ululato_sound_pref');
-            if (pref === 'on') {
-                // El navegador puede bloquear esto si no hay interacción previa
-                video.muted = false;
-                video.play().catch(error => {
-                    // Si falla, volvemos a mute y esperamos clic
-                    video.muted = true;
-                    console.log("Autoplay bloqueado por navegador, esperando interacción.");
-                });
-                if (!video.muted) audioBtn.classList.add('active');
-            }
-        }
+        // ==========================================================================================================================================================
+        // SCRIPT ESCENA 2
+        // ===========================================================================================================================================================
 
-        // 2. ACTIVACIÓN POR PRIMERA INTERACCIÓN GLOBAL (El Truco)
-        // Cualquier clic en el documento activará el sonido si está apagado
-        function unlockAudio() {
-            if (video.muted) {
-                fadeAudioIn();
-            }
-            // Una vez activado, quitamos este "detector" para que no moleste
-            document.removeEventListener('click', unlockAudio);
-        }
+            <script>
+                { // BLOQUE SCENE 2
+                
+                    const scene2ContainerId = 'scene-digital';
+                    let isScene2Visible = false;
+                    let transitionTriggered = false; 
+                    let isLocked = true; // <--- EL CANDADO (Empieza cerrado)
+                
+                    // Referencias DOM
+                    const vidIntro = document.getElementById('vid-intro');
+                    const vidLoop = document.getElementById('vid-loop');
+                    const vidTrans = document.getElementById('vid-transition');
+                    const interactionLayer = document.getElementById('interaction-layer');
+                    
+                    // UI Elements
+                    const zones = document.querySelectorAll('.interaction-zone');
+                    const labels = document.querySelectorAll('.menu-label');
+                    const customCursor = document.querySelector('.custom-cursor'); 
+                
+                    // Config
+                    const videoPathPrefix = "https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/";
+                    const CUT_SECONDS = 8; 
+                    let isTransitioning = false; 
+                    let activeHoverColor = null;
+                
+                    // =========================================================================
+                    // 0. FUNCIÓN DE DESBLOQUEO (Para tu Tercer Script)
+                    // =========================================================================
+                    window.activarEscena2 = function() {
+                        console.log("🔓 Escena 2 Desbloqueada por Video Intermedio");
+                        isLocked = false;
+                        
+                        // Verificamos manualmente si ya deberíamos estar reproduciendo
+                        // (Por si el usuario ya estaba scrolleado ahí cuando terminó el video)
+                        if(isScene2Visible) {
+                            playSceneVideos();
+                        }
+                    };
+                
+                    // =========================================================================
+                    // 1. GESTOR DE REPRODUCCIÓN (Lógica centralizada)
+                    // =========================================================================
+                    function playSceneVideos() {
+                        if (isLocked) return; // Si sigue bloqueado, no hacer nada
+                
+                        if (transitionTriggered) {
+                            vidLoop.play();
+                        } else {
+                            vidIntro.play().catch(e => console.log("Esperando interacción..."));
+                        }
+                    }
+                
+                    // =========================================================================
+                    // 2. LÓGICA DE CORTE (Intro -> Loop)
+                    // =========================================================================
+                    vidIntro.addEventListener('timeupdate', () => {
+                        if (!isScene2Visible || isLocked || transitionTriggered) return;
+                
+                        if (vidIntro.duration - vidIntro.currentTime <= CUT_SECONDS) {
+                            transitionTriggered = true;
+                            vidLoop.play();
+                            vidIntro.classList.remove('active'); vidIntro.classList.add('hidden');
+                            vidLoop.classList.remove('hidden'); vidLoop.classList.add('active');
+                            if(interactionLayer) interactionLayer.style.visibility = 'visible';
+                            
+                            gsap.to(".menu-label", { y: 0, opacity: 1, duration: 1, stagger: 0.2, ease: "power2.out", delay: 0.5 });
+                            gsap.to(".menu-label", { y: 20, opacity: 0, duration: 1, stagger: 0.1, ease: "power2.in", delay: 4.5, overwrite: "auto" });
+                            
+                            setTimeout(() => vidIntro.pause(), 1000);
+                        }
+                    });
+                
+                    // =========================================================================
+                    // 3. INTERACTIVIDAD (Hover, Clicks, Cursor)
+                    // =========================================================================
+                    function activateState(hoverVideoId, textId, color) {
+                        if (isTransitioning || isLocked) return; // Respetar candado
+                        activeHoverColor = color; 
+                        const vid = document.getElementById(hoverVideoId);
+                        const txt = document.getElementById(textId);                 
+                        if (vid) {
+                            if (vid.ended || vid.paused) vid.currentTime = 0; 
+                            vid.play();
+                            gsap.to(vid, { opacity: 1, duration: 0.4, ease: "power2.out" });
+                        }
+                        if (txt) gsap.to(txt, { y: 0, opacity: 1, duration: 0.5, ease: "back.out(1.7)", overwrite: "auto" });
+                    }
+                
+                    function deactivateState(hoverVideoId, textId, color, relatedTarget) {
+                        if (relatedTarget && (relatedTarget.id === textId || relatedTarget.dataset.color === color)) return; 
+                        activeHoverColor = null;
+                        const vid = document.getElementById(hoverVideoId);
+                        const txt = document.getElementById(textId);
+                        if (vid) gsap.to(vid, { opacity: 0, duration: 0.4, ease: "power2.out", onComplete: () => vid.pause() });
+                        if (txt) gsap.to(txt, { y: 20, opacity: 0, duration: 0.3, overwrite: "auto" });
+                    }
+                
+                    zones.forEach(zone => {
+                        const { hoverId, textId, color, url } = zone.dataset;
+                        zone.addEventListener('mouseenter', () => {
+                            activateState(hoverId, textId, color);
+                            gsap.to("#hero-cta", { opacity: 0, duration: 0.5, overwrite: "auto" });
+                            if(customCursor) customCursor.classList.add('active');
+                        });
+                        zone.addEventListener('mouseleave', (e) => {
+                            deactivateState(hoverId, textId, color, e.relatedTarget);
+                            if(customCursor) customCursor.classList.remove('active');
+                        });
+                        zone.addEventListener('click', () => triggerTransition(color, url));
+                    });
+                
+                    labels.forEach(label => {
+                        const color = label.dataset.color;
+                        const zone = document.querySelector(`.interaction-zone[data-color="${color}"]`);
+                        if(zone){
+                            const { hoverId, url } = zone.dataset;
+                            label.addEventListener('mouseenter', () => activateState(hoverId, label.id, color));
+                            label.addEventListener('mouseleave', (e) => deactivateState(hoverId, label.id, color, e.relatedTarget));
+                            label.addEventListener('click', () => triggerTransition(color, url));
+                        }
+                    });
+                
+                    // Transición de salida
+                    function triggerTransition(colorName, url) {
+                        isTransitioning = true;
+                        if(interactionLayer) interactionLayer.style.pointerEvents = 'none';
+                        gsap.to(".menu-label", { opacity: 0, duration: 0.2 });
+                        vidTrans.src = `${videoPathPrefix}TransitionCinta${colorName}.mp4`;
+                        vidTrans.load();
+                        vidTrans.oncanplaythrough = () => {
+                            vidTrans.play();
+                            vidLoop.classList.remove('active'); vidLoop.classList.add('hidden'); 
+                            vidTrans.classList.remove('hidden'); vidTrans.classList.add('active');
+                        };
+                        vidTrans.onended = () => {
+                            gsap.to(vidTrans, { opacity: 0, duration: 0.8, onComplete: () => { window.location.href = url; }});
+                        };
+                    }
+                
+                    if(customCursor) {
+                        document.addEventListener('mousemove', (e) => {
+                            if(isScene2Visible && !isLocked) { // Solo visible si no hay bloqueo
+                                gsap.to(customCursor, { x: e.clientX, y: e.clientY, duration: 0.1, autoAlpha: 1 });
+                            } else {
+                                gsap.to(customCursor, { autoAlpha: 0 });
+                            }
+                        });
+                    }
+                
+                    // =========================================================================
+                    // 4. OBSERVER (Modificado para usar el Candado)
+                    // =========================================================================
+                    const scene2Observer = new IntersectionObserver((entries) => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting) {
+                                isScene2Visible = true;
+                                // INTENTAR REPRODUCIR (Solo funcionará si el candado está abierto)
+                                playSceneVideos();
+                            } else {
+                                isScene2Visible = false;
+                                // Pausar todo siempre al salir
+                                vidIntro.pause();
+                                vidLoop.pause();
+                                vidTrans.pause();
+                                document.querySelectorAll('.hover-video').forEach(v => v.pause());
+                            }
+                        });
+                    }, { threshold: 0.2 });
+                
+                    const target2 = document.getElementById(scene2ContainerId);
+                    if(target2) scene2Observer.observe(target2);
+                
+                } // FIN BLOQUE
+         </script>
+
+
+    
+
+        // ==========================================================================================================================================================
+        // SCRIPT SCROLL ESCENA 1
+        // ===========================================================================================================================================================
+
+        <script>
+            // Variables de control para el scroll
+            let isWarping = false; 
+            let section1Loaded = true; // Asumo que esto lo controlas desde el Script 1
+            // let currentScene = 1; // Asumo que tienes esta variable global definida en algún sitio
         
-        // Escuchamos cualquier clic en la página para activar el sonido
-        document.addEventListener('click', unlockAudio);
-
-        const dot = document.querySelector('.cursor-dot'), circle = document.querySelector('.cursor-circle');
-        let cx=0, cy=0;
-        window.addEventListener('mousemove', e => { 
-            dot.style.left = e.clientX + 'px'; dot.style.top = e.clientY + 'px'; 
-            const c = e.target.closest('a, button, .menu-trigger'); 
-            if(c) { circle.style.width = '60px'; circle.style.height = '60px'; circle.style.backgroundColor = 'rgba(212, 175, 55, 0.1)'; circle.style.borderColor = 'var(--gold)'; } 
-            else { circle.style.width = '40px'; circle.style.height = '40px'; circle.style.backgroundColor = 'transparent'; circle.style.borderColor = 'rgba(212, 175, 55, 0.6)'; } 
-        });
-        function ac() { cx+=(mouse.x-cx)*0.15; cy+=(mouse.y-cy)*0.15; circle.style.left=cx+'px'; circle.style.top=cy+'px'; requestAnimationFrame(ac); } ac();
-    </script>
+            // Si no tienes una variable global currentScene, podemos usar clases para detectar:
+            // const isScene1 = document.getElementById('scene-material').classList.contains('active');
+        
+            window.addEventListener('wheel', (e) => {
+                
+                // 1. Referencias rápidas para validación
+                const sceneMaterial = document.getElementById('scene-material');
+                const isScene1Active = sceneMaterial.classList.contains('active'); // Verificamos si la escena 1 está activa
+        
+                // 2. Condiciones
+                const scrollingDown = e.deltaY > 0;
+                const notWarping = !isWarping; // Evita dispararlo doble vez
+                
+                // 3. GATILLO
+                if (scrollingDown && isScene1Active && notWarping) {
+                    console.log("🚀 Validado: Iniciando Warp a Escena 2");
+                    isWarping = true; // Bloqueamos inmediatamente
+                    initWarpSequence(); // <--- AQUÍ CORREGÍ EL NOMBRE DE LA FUNCIÓN
+                }
+        
+            }, { passive: true });
+             
+            
+            function initWarpSequence() {
+                const sceneMaterial = document.getElementById('scene-material');
+                const sceneDigital = document.getElementById('scene-digital');
+                const warpLayer = document.getElementById('warp-tunnel');
+                const warpVideo = document.getElementById('vid-warp');
+                
+                // NOTA: Ya no necesitamos seleccionar 'introCintas' aquí, 
+                // porque el Script 2 se encargará de eso.
+        
+                // 1. ARRANCAR MOTORES (Video Warp)
+                warpLayer.style.opacity = '1';
+                warpLayer.style.pointerEvents = 'all'; // Asegura que cubra todo
+                warpVideo.play();
+                
+                // 2. A MITAD DEL VIAJE (El truco de magia)
+                // Ajusta este tiempo para que coincida con el momento más oscuro o rápido de tu video warp
+                setTimeout(() => {
+                    
+                    // A. Apagar Escena 1 (Material)
+                    sceneMaterial.classList.remove('active');
+                    sceneMaterial.classList.add('hidden');
+            
+                    // B. Encender Escena 2 (Digital/Cintas)
+                    sceneDigital.classList.remove('hidden');
+                    sceneDigital.classList.add('active');
+                    
+                    // C. LLAMAR A LA FUNCIÓN GLOBAL DEL SCRIPT 2  <--- AQUÍ ESTÁ EL CAMBIO
+                    // Esto le quita el candado a la Escena 2 y hace que sus videos arranquen
+                    if (typeof window.activarEscena2 === 'function') {
+                        window.activarEscena2();
+                    } else {
+                        console.error("⚠️ No se encontró la función activarEscena2. Revisa que el Script 2 esté cargado.");
+                    }
+            
+                }, 1000); // 1 segundo después de iniciar el warp
+            
+                // 3. ATERRIZAJE (Fin del Warp)
+                warpVideo.addEventListener('ended', () => {
+                    // Desvanecer capa warp suavemente
+                    gsap.to(warpLayer, { 
+                        opacity: 0, 
+                        duration: 0.5, 
+                        onComplete: () => {
+                            warpLayer.style.pointerEvents = 'none'; // Dejar pasar clicks
+                            isWarping = false; // Liberar variable por si se necesita (aunque ya cambiamos de escena)
+                        }
+                    });
+                }, { once: true }); // Importante: once: true para que no se acumulen eventos
+            }
+        
+        </script>
+    
 </body>
 </html>
