@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="es" style="background-color: #000000; margin: 0; padding: 0;">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ULULATO | Web</title>
+    
+    <!-- FUENTES & ICONOS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Space+Grotesk:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
+
+    <style>
+        /* --- 0. VARIABLES & RESET --- */
+        :root {
+            --gold: #D4AF37;
+            --gold-dim: rgba(212, 175, 55, 0.2);
+            --bg-dark: #0a0a0a;
+            --bg-sidebar: #111111;
+            --bg-chat: rgba(5, 5, 5, 0.92); /* Casi opaco para legibilidad */
+            --border: rgba(255, 255, 255, 0.08);
+            --msg-in: #202020;
+            --msg-out: #2b220a; /* Gold tint oscuro */
+            --font-serif: 'Cinzel', serif;
+            --font-sans: 'Space Grotesk', sans-serif;
+        }
+
+        html, body { 
+            margin: 0; padding: 0; 
+            background-color: #000000 !important;
+            color: #E0E0E0; 
+            font-family: var(--font-sans); 
+            height: 100vh; width: 100vw;
+            overflow: hidden;
+        }
+        
+        * { box-sizing: border-box; outline: none; }
+        img { max-width: 100%; display: block; } /* Previene desbordamientos */
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+
+        /* --- 1. FONDO NEURAL (CANVAS 2D) --- */
+        #neural-canvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0; pointer-events: none; opacity: 0.4;
+        }
+
+        /* --- 2. LAYOUT PRINCIPAL (GRID) --- */
+        .app-layout {
+            position: relative; z-index: 10;
+            display: grid;
+            grid-template-columns: 380px 1fr; /* Sidebar fija, Chat flexible */
+            width: 100%; height: 100%;
+            max-width: 1600px; margin: 0 auto;
+            background: #000;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+
+        @media (min-width: 1200px) {
+            .app-layout { 
+                height: 95vh; margin-top: 2.5vh; 
+                border-radius: 16px; border: 1px solid var(--border);
+            }
+        }
+
+        /* --- 3. SIDEBAR (IZQUIERDA) --- */
+        .sidebar {
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            display: flex; flex-direction: column;
+            height: 100%;
+        }
+
+        .sidebar-header {
+            height: 60px; padding: 10px 16px;
+            background-color: #181818;
+            border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+            flex-shrink: 0;
+        }
+
+        .user-avatar {
+            width: 40px; height: 40px; border-radius: 50%;
+            border: 1px solid #444; cursor: pointer; object-fit: cover;
+        }
+
+        .sidebar-nav { display: flex; gap: 15px; color: #aebac1; }
+        .nav-icon { cursor: pointer; transition: 0.2s; font-size: 24px; }
+        .nav-icon:hover { color: var(--gold); }
+
+        /* Buscador */
+        .search-container {
+            padding: 10px; border-bottom: 1px solid var(--border);
+        }
+        .search-bar {
+            background-color: #202020; border-radius: 8px;
+            padding: 7px 12px; display: flex; align-items: center; gap: 10px;
+        }
+        .search-bar input {
+            background: transparent; border: none; color: #fff; width: 100%;
+            font-family: var(--font-sans); font-size: 0.9rem;
+        }
+        .search-bar span { font-size: 18px; color: #888; }
+
+        /* Lista Contactos */
+        .contact-list { flex: 1; overflow-y: auto; }
+        .contact {
+            display: flex; align-items: center; gap: 15px;
+            padding: 12px 15px; cursor: pointer;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            transition: background 0.2s;
+        }
+        .contact:hover { background-color: #202020; }
+        .contact.active { background-color: rgba(212, 175, 55, 0.08); border-left: 3px solid var(--gold); }
+
+        .c-avatar-wrap { position: relative; width: 48px; height: 48px; flex-shrink: 0; }
+        .c-avatar { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+        
+        .c-info { flex: 1; overflow: hidden; }
+        .c-top { display: flex; justify-content: space-between; margin-bottom: 4px; }
+        .c-name { font-weight: 500; font-size: 1rem; color: #e9edef; font-family: var(--font-serif); }
+        .c-time { font-size: 0.75rem; color: #8696a0; }
+        
+        .c-bottom { display: flex; justify-content: space-between; align-items: center; }
+        .c-msg { font-size: 0.85rem; color: #8696a0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .badge { background: var(--gold); color: #000; font-size: 0.7rem; font-weight: bold; padding: 2px 6px; border-radius: 10px; }
+
+        /* --- 4. CHAT AREA (DERECHA) --- */
+        .chat-main {
+            display: flex; flex-direction: column;
+            background-color: var(--bg-chat); /* Fondo oscuro semitransparente */
+            position: relative;
+            height: 100%;
+        }
+
+        /* Header Chat */
+        .chat-header {
+            height: 60px; padding: 10px 20px;
+            background-color: #181818;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; gap: 15px;
+            flex-shrink: 0; z-index: 20;
+        }
+        .chat-header-info { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+        .chat-header-name { font-family: var(--font-serif); font-weight: bold; font-size: 1.1rem; color: var(--gold); }
+        .chat-header-status { font-size: 0.75rem; color: #8696a0; }
+        
+        .header-actions { display: flex; gap: 20px; color: #aebac1; }
+        .action-btn { cursor: pointer; transition: 0.2s; }
+        .action-btn:hover { color: var(--gold); }
+
+        /* Messages Area */
+        .messages-container {
+            flex: 1; padding: 20px 5%;
+            overflow-y: auto;
+            display: flex; flex-direction: column; gap: 8px;
+            position: relative; z-index: 1;
+        }
+        
+        /* Pattern Overlay (Sutil) */
+        .bg-pattern {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 20px 20px;
+            pointer-events: none; z-index: 0;
+        }
+
+        /* Bubbles */
+        .msg {
+            max-width: 65%; padding: 8px 12px 24px 12px;
+            border-radius: 8px; position: relative;
+            font-size: 0.95rem; line-height: 1.4;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+            animation: slideIn 0.2s ease-out;
+        }
+        .msg-in {
+            align-self: flex-start;
+            background-color: var(--msg-in);
+            border-top-left-radius: 0;
+        }
+        .msg-out {
+            align-self: flex-end;
+            background-color: var(--msg-out);
+            border-top-right-radius: 0;
+            color: #fff;
+        }
+        .msg-time {
+            position: absolute; bottom: 4px; right: 8px;
+            font-size: 0.65rem; color: rgba(255,255,255,0.5);
+            display: flex; align-items: center; gap: 3px;
+        }
+        .tick { font-size: 16px !important; }
+        .tick-read { color: var(--gold); }
+
+        /* Footer */
+        .chat-footer {
+            height: 62px; padding: 10px 16px;
+            background-color: #181818;
+            border-top: 1px solid var(--border);
+            display: flex; align-items: center; gap: 12px;
+            z-index: 20;
+        }
+        .footer-btn { color: #8696a0; cursor: pointer; transition: 0.3s; padding: 8px; border-radius: 50%; }
+        .footer-btn:hover { color: var(--gold); background: rgba(255,255,255,0.05); }
+        
+        .input-bar {
+            flex: 1; background-color: #2a2a2a;
+            border-radius: 8px; padding: 9px 12px;
+            border: 1px solid transparent; transition: 0.3s;
+        }
+        .input-bar:focus-within { border-color: var(--gold); background-color: #333; }
+        .input-bar input {
+            width: 100%; border: none; background: transparent;
+            color: #fff; font-family: var(--font-sans); font-size: 1rem;
+        }
+
+        .mic-button {
+            width: 45px; height: 45px; border-radius: 50%;
+            background: var(--gold); color: #000;
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .mic-button:hover { transform: scale(1.05); }
+        .mic-button.recording { background: #ff3b30; color: white; animation: pulseRecord 1s infinite; }
+
+        /* Interfaces Flotantes */
+        .attach-menu {
+            position: absolute; bottom: 70px; left: 15px;
+            display: flex; flex-direction: column; gap: 10px;
+            opacity: 0; pointer-events: none; transform: translateY(20px);
+            transition: 0.3s; z-index: 50;
+        }
+        .attach-menu.open { opacity: 1; pointer-events: auto; transform: translateY(0); }
+        .attach-icon { width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+        .attach-icon:hover { transform: translateY(-3px); }
+
+        .overlay-call {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 100;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: 0.4s;
+        }
+        .overlay-call.active { opacity: 1; pointer-events: auto; }
+        .pulse-avatar { width: 120px; height: 120px; border-radius: 50%; border: 3px solid var(--gold); animation: pulseGreen 2s infinite; margin-bottom: 20px; }
+
+        /* Animaciones */
+        @keyframes slideIn { from{opacity:0; transform:translateX(-10px);} to{opacity:1; transform:translateX(0);} }
+        @keyframes pulseRecord { 0%{transform:scale(1);} 50%{transform:scale(1.1);} 100%{transform:scale(1);} }
+        @keyframes pulseGreen { 0%{box-shadow:0 0 0 0 rgba(0,255,136,0.4);} 70%{box-shadow:0 0 0 15px rgba(0,255,136,0);} 100%{box-shadow:0 0 0 0 rgba(0,255,136,0);} }
+
+        /* Mobile */
+        @media (max-width: 900px) {
+            .app-layout { grid-template-columns: 1fr; border-radius: 0; margin: 0; height: 100vh; }
+            .sidebar { display: none; } /* En móvil se mostraría una u otra, aquí forzamos chat para demo */
+        }
+    </style>
+</head>
+<body>
+
+    <!-- FONDO NEURAL (JavaScript 2D) -->
+    <canvas id="neural-canvas"></canvas>
+
+    <!-- APP WRAPPER -->
+    <div class="app-layout">
+        
+        <!-- 1. SIDEBAR (IZQUIERDA) -->
+        <aside class="sidebar">
+            <header class="sidebar-header">
+                <img src="https://i.pravatar.cc/150?img=11" class="user-avatar" alt="Mi Perfil" onclick="alert('Perfil de Usuario')">
+                <div class="sidebar-nav">
+                    <span class="material-symbols-rounded nav-icon">groups</span>
+                    <span class="material-symbols-rounded nav-icon">donut_large</span>
+                    <span class="material-symbols-rounded nav-icon">chat</span>
+                    <span class="material-symbols-rounded nav-icon">more_vert</span>
+                </div>
+            </header>
+            
+            <div class="search-container">
+                <div class="search-bar">
+                    <span class="material-symbols-rounded">search</span>
+                    <input type="text" placeholder="Buscar o iniciar nuevo chat">
+                </div>
+            </div>
+
+            <div class="contact-list">
+                <!-- Chat Activo -->
+                <div class="contact active">
+                    <div class="c-avatar-wrap">
+                        <img src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/imagenes/Logo.png" class="c-avatar">
+                    </div>
+                    <div class="c-info">
+                        <div class="c-top">
+                            <span class="c-name">YO SOY ULULATO</span>
+                            <span class="c-time">10:45</span>
+                        </div>
+                        <div class="c-bottom">
+                            <span class="c-msg">Bienvenido al nexo digital...</span>
+                            <span class="badge">1</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat 2 -->
+                <div class="contact">
+                    <div class="c-avatar-wrap">
+                        <img src="https://i.pravatar.cc/150?img=68" class="c-avatar">
+                    </div>
+                    <div class="c-info">
+                        <div class="c-top">
+                            <span class="c-name">Guía Ancestral</span>
+                            <span class="c-time">Ayer</span>
+                        </div>
+                        <div class="c-bottom">
+                            <span class="c-msg">✓✓ La ceremonia está lista.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat 3 -->
+                <div class="contact">
+                    <div class="c-avatar-wrap">
+                        <img src="https://i.pravatar.cc/150?img=59" class="c-avatar">
+                    </div>
+                    <div class="c-info">
+                        <div class="c-top">
+                            <span class="c-name">Soporte Técnico</span>
+                            <span class="c-time">Martes</span>
+                        </div>
+                        <div class="c-bottom">
+                            <span class="c-msg">Tu ticket #402 ha sido resuelto.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 2. CHAT MAIN (DERECHA) -->
+        <main class="chat-main">
+            <!-- Background pattern inside chat -->
+            <div class="bg-pattern"></div>
+
+            <header class="chat-header">
+                <div class="c-avatar-wrap" style="width: 40px; height: 40px; cursor:pointer;" onclick="window.location.href='index.html'">
+                    <img src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/imagenes/Logo.png" class="c-avatar">
+                </div>
+                <div class="chat-header-info">
+                    <div class="chat-header-name">YO SOY ULULATO</div>
+                    <div class="chat-header-status" id="statusText">En línea</div>
+                </div>
+                <div class="header-actions">
+                    <span class="material-symbols-rounded action-btn" onclick="openCall()">videocam</span>
+                    <span class="material-symbols-rounded action-btn" onclick="openCall()">call</span>
+                    <span class="material-symbols-rounded action-btn">search</span>
+                    <span class="material-symbols-rounded action-btn">more_vert</span>
+                </div>
+            </header>
+
+            <div class="messages-container" id="chatContainer">
+                <div style="align-self: center; background: rgba(30,30,30,0.8); padding: 5px 10px; border-radius: 8px; font-size: 0.75rem; color: #888; margin-bottom: 10px;">HOY</div>
+                
+                <div class="msg msg-in">
+                    Bienvenido al nexo. La frecuencia está abierta. ¿Cómo podemos tejer el futuro juntos?
+                    <div class="msg-time">10:45 AM</div>
+                </div>
+            </div>
+
+            <!-- Menú Adjuntos -->
+            <div class="attach-menu" id="attachMenu">
+                <div class="attach-icon" style="background:#5157AE"><span class="material-symbols-rounded">description</span></div>
+                <div class="attach-icon" style="background:#D62976"><span class="material-symbols-rounded">photo_camera</span></div>
+                <div class="attach-icon" style="background:#AC2BBA"><span class="material-symbols-rounded">image</span></div>
+                <div class="attach-icon" style="background:#0F9D58"><span class="material-symbols-rounded">location_on</span></div>
+            </div>
+
+            <footer class="chat-footer">
+                <div class="footer-btn"><span class="material-symbols-rounded">sentiment_satisfied</span></div>
+                <div class="footer-btn" id="btnAttach"><span class="material-symbols-rounded" style="transform: rotate(45deg);">attach_file</span></div>
+                
+                <div class="input-bar">
+                    <input type="text" id="msgInput" placeholder="Escribe un mensaje" autocomplete="off">
+                </div>
+                
+                <div class="mic-button" id="btnSend">
+                    <span class="material-symbols-rounded" id="iconSend">mic</span>
+                </div>
+            </footer>
+
+            <!-- Overlay Llamada -->
+            <div class="overlay-call" id="overlayCall">
+                <img src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/imagenes/Logo.png" class="pulse-avatar">
+                <h2 style="font-family: var(--font-serif); color:#fff; margin-bottom:40px;">LLAMANDO...</h2>
+                <div class="footer-btn" style="background:#ff3b30; color:#fff; width:60px; height:60px; display:flex; justify-content:center; align-items:center;" onclick="closeCall()">
+                    <span class="material-symbols-rounded" style="font-size:30px;">call_end</span>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        // --- 1. NEURAL BACKGROUND ENGINE ---
+        const canvas = document.getElementById('neural-canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height, nodes = [], mouse = {x: -1000, y: -1000};
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+
+        class Node {
+            constructor() {
+                this.x = Math.random() * width; this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 0.5; this.vy = (Math.random() - 0.5) * 0.5;
+                this.size = Math.random() * 2 + 1;
+            }
+            update() {
+                this.x += this.vx; this.y += this.vy;
+                if(this.x < 0 || this.x > width) this.vx *= -1;
+                if(this.y < 0 || this.y > height) this.vy *= -1;
+            }
+            draw() {
+                let dx = mouse.x - this.x; let dy = mouse.y - this.y;
+                let dist = Math.sqrt(dx*dx + dy*dy);
+                if(dist < 250) {
+                    ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
+                    ctx.fillStyle = `rgba(212, 175, 55, ${1 - dist/250})`; ctx.fill();
+                    
+                    nodes.forEach(n2 => {
+                        let dx2 = this.x - n2.x; let dy2 = this.y - n2.y;
+                        let dist2 = Math.sqrt(dx2*dx2 + dy2*dy2);
+                        if(dist2 < 100) {
+                            ctx.beginPath(); ctx.moveTo(this.x, this.y); ctx.lineTo(n2.x, n2.y);
+                            ctx.strokeStyle = `rgba(212, 175, 55, ${(1 - dist/250) * 0.2})`;
+                            ctx.stroke();
+                        }
+                    });
+                }
+            }
+        }
+
+        for(let i=0; i<100; i++) nodes.push(new Node());
+
+        function animate() {
+            ctx.clearRect(0,0,width,height);
+            nodes.forEach(n => { n.update(); n.draw(); });
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        // --- 2. CHAT LOGIC ---
+        const input = document.getElementById('msgInput');
+        const btnSend = document.getElementById('btnSend');
+        const iconSend = document.getElementById('iconSend');
+        const chatContainer = document.getElementById('chatContainer');
+        const btnAttach = document.getElementById('btnAttach');
+        const attachMenu = document.getElementById('attachMenu');
+        const statusText = document.getElementById('statusText');
+        
+        let isRecording = false;
+
+        // Toggle Icon Mic/Send
+        input.addEventListener('input', () => {
+            if(input.value.trim().length > 0) iconSend.innerText = 'send';
+            else iconSend.innerText = 'mic';
+        });
+
+        // Toggle Attach Menu
+        btnAttach.addEventListener('click', (e) => {
+            e.stopPropagation();
+            attachMenu.classList.toggle('open');
+        });
+        document.addEventListener('click', () => attachMenu.classList.remove('open'));
+
+        // Send Message
+        btnSend.addEventListener('click', () => {
+            const text = input.value.trim();
+            
+            // MICRÓFONO
+            if(iconSend.innerText === 'mic') {
+                if(!isRecording) {
+                    isRecording = true;
+                    btnSend.classList.add('recording');
+                    input.placeholder = "Tejiendo audio... (Click para enviar)";
+                } else {
+                    isRecording = false;
+                    btnSend.classList.remove('recording');
+                    input.placeholder = "Escribe un mensaje";
+                    addMsg("🎤 Nota de Voz (0:05)", 'out');
+                    setTimeout(() => botReply("He escuchado tu frecuencia."), 1500);
+                }
+                return;
+            }
+
+            if(!text) return;
+            addMsg(text, 'out');
+            input.value = '';
+            iconSend.innerText = 'mic';
+            
+            // Smart Reply
+            let reply = "Recibido. Procesando en el nexo.";
+            if(text.toLowerCase().includes('hola')) reply = "Saludos, viajero.";
+            if(text.toLowerCase().includes('ayuda')) reply = "¿Qué camino buscas?";
+            
+            setTimeout(() => botReply(reply), 1500);
+        });
+
+        // Add Message to DOM
+        function addMsg(text, type) {
+            const div = document.createElement('div');
+            const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            if(type === 'out') {
+                div.className = 'msg msg-out';
+                div.innerHTML = `${text}<div class="msg-time">${time} <span class="material-symbols-rounded tick">done_all</span></div>`;
+            } else {
+                div.className = 'msg msg-in';
+                div.innerHTML = `${text}<div class="msg-time">${time}</div>`;
+                playSound(); // Sonido al recibir
+            }
+            chatContainer.appendChild(div);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function botReply(text) {
+            statusText.innerText = "Escribiendo...";
+            statusText.style.color = "#00FF88";
+            setTimeout(() => {
+                statusText.innerText = "En línea";
+                statusText.style.color = "#8696a0";
+                addMsg(text, 'in');
+            }, 1500);
+        }
+
+        // Simple Beep
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound() {
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.connect(g); g.connect(audioCtx.destination);
+            o.frequency.setValueAtTime(600, audioCtx.currentTime);
+            g.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+            o.start(); o.stop(audioCtx.currentTime + 0.1);
+        }
+
+        // Call UI
+        function openCall() { document.getElementById('overlayCall').classList.add('active'); }
+        function closeCall() { document.getElementById('overlayCall').classList.remove('active'); }
+
+        input.addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') btnSend.click();
+        });
+
+    </script>
+</body>
+</html>
