@@ -732,19 +732,23 @@
 
     const containerId = 'scene-material'; 
     let isSceneActive = true; 
-    let hasIntroFinished = false; // Bandera clave: ¿Ya vimos la intro?
+    let hasIntroFinished = false; 
     
-    // IDs de animación para poder cancelarlas y ahorrar batería
     let starAnimId, neuralAnimId, tunnelAnimId, loadAnimId;
 
-    // Referencias DOM globales en este scope
     const starCanvas = document.getElementById('loader-canvas');
     const starContainer = document.getElementById('loader-canvas-container');
     const video = document.getElementById('bg-video');
     const preloader = document.getElementById('preloader');
-    
+
+    // --- CARGA DINÁMICA DEL VIDEO ---
+    if (video && video.dataset.src && !video.src) {
+        video.src = video.dataset.src;
+        video.load(); 
+    }
+
     // ==========================================
-    // 1. ESTRELLAS (Solo para el inicio)
+    // 1. ESTRELLAS
     // ==========================================
     const sCtx = starCanvas ? starCanvas.getContext('2d') : null;
     let width, height, stars = [], loadProgress = 0, isWarping = false;
@@ -765,14 +769,13 @@
         }
     }
     
-    // Inicializamos estrellas solo si la intro no ha terminado
     if (!hasIntroFinished) {
         initStars();
         window.addEventListener('resize', initStars);
     }
 
     function animateStars() {
-        if (!isSceneActive || hasIntroFinished) return; // Freno de seguridad
+        if (!isSceneActive || hasIntroFinished) return; 
 
         sCtx.fillStyle = isWarping ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 1)'; 
         sCtx.fillRect(0, 0, width, height);
@@ -780,17 +783,14 @@
         stars.forEach(s => {
             let speed = 2 + (loadProgress * 2.0);
             if(isWarping) speed = 80; 
-            
             s.z -= speed;
             if (s.z <= 0) { 
                 s.z = width; s.x = Math.random() * width - width / 2; s.y = Math.random() * height - height / 2; 
             }
-            
             let x = (s.x / s.z) * width + width / 2;
             let y = (s.y / s.z) * height + height / 2;
             let r = (1 - s.z / width) * s.size * 2;
             if(isWarping) r *= 1.5; 
-
             sCtx.beginPath(); sCtx.arc(x, y, r, 0, Math.PI*2); sCtx.fillStyle = s.color; sCtx.fill();
         });
         starAnimId = requestAnimationFrame(animateStars);
@@ -821,23 +821,22 @@
     }
 
     // ==========================================
-    // 2. TÚNEL DE HUMO (Three.js)
+    // 2. TÚNEL DE HUMO
     // ==========================================
     let renderer, scene, camera, clock;
     
     function initTunnelAnimation() {
-        if (renderer || hasIntroFinished) return; // Doble chequeo
+        if (renderer || hasIntroFinished) return; 
 
         const CONFIG = { duration: 4.5, fadeStart: 3.0, fadeEnd: 4.0, speed: 3500, innerRadius: 140, radiusVar: 220, count: 350, stretch: 12 };
         
         const textureLoader = new THREE.TextureLoader();
         textureLoader.load("https://raw.githubusercontent.com/navin-navi/codepen-assets/master/images/smoke.png", (texture) => {
             const glContainer = document.getElementById("webgl-container");
-            if(!glContainer) return; // Si ya no existe, salir
+            if(!glContainer) return; 
 
             glContainer.classList.add('active'); 
             
-            // Ocultar estrellas suavemente
             setTimeout(() => { 
                 if(starContainer) starContainer.classList.add('fade-out');
                 cancelAnimationFrame(starAnimId); 
@@ -877,18 +876,15 @@
 
                 let elapsed = clock.getElapsedTime();
                 
-                // Lógica de movimiento humo...
                 camera.position.z -= CONFIG.speed * 0.016;
                 clouds.forEach(c => { if(c.position.z > camera.position.z + 500) c.position.z -= 10000; });
                 camera.position.x = (Math.random()-0.5)*10; camera.position.y = (Math.random()-0.5)*10;
                 scene.rotation.z += 0.003;
 
-                // FADE IN
                 if (elapsed > CONFIG.fadeStart && !document.body.classList.contains('reveal-video')) {
                     document.body.classList.add('reveal-video');
                 }
                 
-                // EXPANSION
                 if (elapsed > CONFIG.fadeStart) {
                      let progress = (elapsed - CONFIG.fadeStart) / (CONFIG.fadeEnd - CONFIG.fadeStart);
                      progress = Math.min(progress, 1);
@@ -902,12 +898,16 @@
                     });
                 }
 
-                // PLAY VIDEO (Si aún no suena)
+                // PLAY VIDEO (Con corrección de autoplay)
                 if (elapsed > (CONFIG.fadeEnd - 0.5) && video.paused) {
-                    video.play().catch(e=>{});
+                    video.muted = true;
+                    video.play().catch(error => {
+                        console.warn("Autoplay forzado falló. Intentando play secundario.");
+                        video.muted = true;
+                        video.play();
+                    });
                 }
-
-                // FIN ABSOLUTO DE LA INTRO
+                
                 if (elapsed >= CONFIG.duration) {
                     finishIntro();
                     return;
@@ -921,36 +921,32 @@
     }
 
     function finishIntro() {
-        hasIntroFinished = true; // <--- AQUÍ MARCAMOS EL FIN DEFINITIVO
-        
+        hasIntroFinished = true;
         document.body.classList.add('loaded'); 
         
-        // LIMPIEZA TOTAL: Eliminamos WebGL y Estrellas del DOM para que no consuman nada
         const glContainer = document.getElementById('webgl-container');
         if(glContainer) {
             glContainer.style.transition = 'opacity 1s';
             glContainer.style.opacity = '0';
             setTimeout(() => { 
                 if(renderer) renderer.dispose(); 
-                glContainer.remove(); // Se elimina del HTML
+                glContainer.remove();
             }, 1000);
         }
         
-        if(starContainer) starContainer.style.display = 'none'; // Ocultar contenedor estrellas
-
-        // Iniciamos el efecto "idle" (Neural Veil)
+        if(starContainer) starContainer.style.display = 'none'; 
         initNeuralVeil(); 
     }
 
     // ==========================================
-    // 3. CAPA NEURAL (Efecto sutil sobre video)
+    // 3. CAPA NEURAL
     // ==========================================
     const neuralCanvas = document.getElementById('neural-canvas');
     const nCtx = neuralCanvas.getContext('2d');
     let nW, nH, nodes = [], mouse = { x: null, y: null };
 
     function initNeuralVeil() { 
-        if(nodes.length === 0) { // Crear solo una vez
+        if(nodes.length === 0) {
             resizeNeural(); 
             window.addEventListener('resize', resizeNeural); 
             window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; }); 
@@ -981,49 +977,70 @@
     }
 
     // ==========================================
-    // 4. OBSERVER: EL CONTROLADOR FINAL
+    // 5. NUEVO: LÓGICA DE AUDIO (LA PIEZA FALTANTE)
+    // ==========================================
+    const audioBtn = document.getElementById('audioBtn');
+    
+    // A. RESETEO DE SEGURIDAD (La clave del éxito)
+    // Esto asegura que al recargar, el botón y el video estén sincronizados en OFF
+    if(audioBtn) {
+        audioBtn.classList.remove('active'); // Apagar bombillo visualmente
+        video.muted = true; // Forzar silencio al video
+    }
+
+    // B. CONTROLADOR DE CLIC
+    if(audioBtn) {
+        audioBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); 
+            
+            if (video.muted) {
+                // Activar Sonido
+                video.muted = false;
+                video.volume = 1;
+                audioBtn.classList.add('active');
+            } else {
+                // Desactivar Sonido
+                video.muted = true;
+                audioBtn.classList.remove('active');
+            }
+        });
+    }
+
+
+    // ==========================================
+    // 6. OBSERVER
     // ==========================================
     const sectionObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
-            
-            // ---> ENTRAR EN ESCENA
             if (entry.isIntersecting) {
                 isSceneActive = true;
                 
                 if (hasIntroFinished) {
-                    // CASO: VOLVEMOS DE OTRA SECCIÓN (NO INTRO)
-                    console.log("Hero: Regreso del usuario. Solo Video.");
+                    console.log("Hero: Regreso del usuario.");
                     
-                    // 1. Asegurar video play
-                    if(video && video.paused) video.play().catch(()=>{});
+                    // Asegurar video play en silencio al regresar
+                    if(video && video.paused) {
+                        video.muted = true; // Forzar mute para garantizar play
+                        video.play().catch(()=>{});
+                    }
                     
-                    // 2. Activar capa neural (opcional, si la quieres quitar comenta esta linea)
                     animateNeural();
-                    
-                    // 3. GARANTÍA: Ocultar elementos de carga por si acaso
                     if(preloader) preloader.style.display = 'none';
                     if(starContainer) starContainer.style.display = 'none';
 
                 } else {
-                    // CASO: PRIMERA VEZ
-                    console.log("Hero: Primera carga. Iniciando secuencia.");
+                    console.log("Hero: Primera carga.");
                     if (loadProgress < 100 && !loadAnimId) {
                         animateStars();
                         simLoad(); 
                     }
                 }
-
-            // ---> SALIR DE ESCENA
             } else {
                 isSceneActive = false;
-                
-                // Detener todo consumo de CPU
                 cancelAnimationFrame(starAnimId);
                 cancelAnimationFrame(tunnelAnimId);
                 cancelAnimationFrame(neuralAnimId);
                 cancelAnimationFrame(loadAnimId);
-                
-                // Pausar video
                 if(video && !video.paused) video.pause();
             }
         });
