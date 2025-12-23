@@ -595,8 +595,8 @@
                     <div class="scroll-line"><div class="scroll-fill"></div></div>
                 </div>
             
-                <!-- BOTÓN DE AUDIO (Corregido) -->
-                <button class="audio-toggle" id="audioBtn">
+                <!-- BOTÓN DE AUDIO -->
+                <button class="audio-toggle inactive" id="audioBtn">
                     <div class="bars"><div class="bar"></div><div class="bar"></div><div class="bar"></div></div> SONIDO
                 </button>
          </section>
@@ -1021,11 +1021,13 @@
                 // Activar Sonido
                 video.muted = false;
                 video.volume = 1;
+                audioBtn.classList.remove('inactive');
                 audioBtn.classList.add('active');
             } else {
                 // Desactivar Sonido
                 video.muted = true;
                 audioBtn.classList.remove('active');
+                    audioBtn.classList.add('inactive');
             }
         });
     }
