@@ -1144,7 +1144,7 @@
                             vidLoop.play();
                             vidIntro.classList.remove('active'); vidIntro.classList.add('hidden');
                             vidLoop.classList.remove('hidden'); vidLoop.classList.add('active');
-                            if(interactionLayer) Layer.style.visibility = 'visible';
+                            if(interactionLayer) interactionLayer.style.visibility = 'visible';
                             
                             gsap.to(".menu-label", { y: 0, opacity: 1, duration: 1, stagger: 0.2, ease: "power2.out", delay: 0.5 });
                             gsap.to(".menu-label", { y: 20, opacity: 0, duration: 1, stagger: 0.1, ease: "power2.in", delay: 4.5, overwrite: "auto" });
