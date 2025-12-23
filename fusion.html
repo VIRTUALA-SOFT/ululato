@@ -981,7 +981,7 @@
             e.stopPropagation(); 
             // Invertimos estado
             if (video.muted) {
-                video.muted = false;
+                video.muted = true;
                 video.volume = 1;
                 newAudioBtn.classList.add('active');
             } else {
