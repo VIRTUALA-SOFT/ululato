@@ -728,308 +728,308 @@
         // ===========================================================================================================================================================
         <!-- SCRIPT ESCENA 1 (CORREGIDO Y BLINDADO) -->
 <script>
-    document.addEventListener("DOMContentLoaded", () => {
+{ // BLOQUE DE AISLAMIENTO SCENE 1
 
-        // --- LÓGICA DE BUCLE PERSONALIZADO (LOOP DESDE SEGUNDO 3) ---
-        //const LOOP_START_TIME = 3; // El segundo exacto donde quieres que reinicie
-        
-        //document.querySelectorAll('.hover-video').forEach(video => {
-            // 1. Escuchamos cuando el video termina
-          //  video.addEventListener('ended', () => {
-                // 2. Rebobinamos al segundo deseado
-               // video.currentTime = LOOP_START_TIME;
-                
-                // 3. Volvemos a reproducir
-                // Usamos una promesa para evitar errores si el usuario salió rápido
-              //  video.play().catch(() => { /* Ignorar errores de interrupción */ });
-          //  });
-        //});
-        
-        // --- CONFIGURACIÓN ---
-        const videoPathPrefix = "https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/"; // Si los videos están en una carpeta, pon: "assets/videos/"
-        
-        // --- REFERENCIAS DOM ---
-        const loader = document.getElementById('loader');
-        const vidIntro = document.getElementById('vid-intro');
-        const vidLoop = document.getElementById('vid-loop');
-        const vidTrans = document.getElementById('vid-transition');
-        const interactionLayer = document.getElementById('interaction-layer');
-        const zones = document.querySelectorAll('.interaction-zone');
-        const labels = document.querySelectorAll('.menu-label');
+    const containerId = 'scene-material'; 
+    let isSceneActive = true; 
+    let hasIntroFinished = false; 
+    let starAnimId, neuralAnimId, tunnelAnimId, loadAnimId;
 
-          // Opcional: Si no usas cursor personalizado, comenta la siguiente línea
-        const customCursor = document.querySelector('.custom-cursor');       
-        
-        let isTransitioning = false; // Flag para evitar dobles clics
-        let activeHoverColor = null; // Para evitar conflictos de animaciones
+    // Referencias DOM
+    const starCanvas = document.getElementById('loader-canvas');
+    const starContainer = document.getElementById('loader-canvas-container');
+    const video = document.getElementById('bg-video');
+    const preloader = document.getElementById('preloader');
+    const audioBtn = document.getElementById('audioBtn');
 
-        // --- 1. INICIALIZACIÓN ---
-        // Esperamos a que el intro tenga suficiente data para reproducir
-        vidIntro.addEventListener('canplaythrough', () => {
-            loader.style.opacity = '0';
-            setTimeout(() => loader.remove(), 600);
-            vidIntro.play().catch(e => console.log("Autoplay bloqueado por navegador, requiere interacción."));
-        }, { once: true });
-
-        // Fallback por si 'canplaythrough' ya ocurrió
-        if (vidIntro.readyState >= 3) {
-            loader.style.opacity = '0';
-            vidIntro.play();
-        }
-
-        // --- 2. ORQUESTACIÓN INTRO -> LOOP ---
-      /*  vidIntro.addEventListener('ended', () => {
-            // Iniciamos reproducción del loop ANTES de mostrarlo (seamless)
-            vidLoop.play();
-
-            // Crossfade
-            vidIntro.classList.remove('active');
-            vidIntro.classList.add('hidden');
-            
-            vidLoop.classList.remove('hidden');
-            vidLoop.classList.add('active');
-
-            // Activamos la capa de interacción
-            interactionLayer.style.visibility = 'visible';
-            
-            // Animación de entrada para las zonas (opcional, mejora UX)
-            gsap.fromTo(zones, 
-                { autoAlpha: 0 }, 
-                { autoAlpha: 1, duration: 1, ease: "power2.out" }
-            );
-        });*/
-
-        
-   
-        const CUT_SECONDS = 8; // Cuantos segundos antes quieres cortar
-        let transitionTriggered = false; // Candado para que no se dispare mil veces
-        
-        vidIntro.addEventListener('timeupdate', () => {
-            // Si (Duración total - Tiempo actual) es menor o igual a 4 segundos...
-            if (!transitionTriggered && (vidIntro.duration - vidIntro.currentTime <= CUT_SECONDS)) {
-                
-                transitionTriggered = true; // Bloqueamos para que ocurra solo una vez
-                
-                console.log("✂️ Cortando video por código e iniciando Loop");
-                
-                // 1. Iniciar el siguiente video inmediatamente
-                vidLoop.play();
-        
-                // 2. Crossfade visual (GSAP)
-                vidIntro.classList.remove('active');
-                vidIntro.classList.add('hidden');
-                
-                vidLoop.classList.remove('hidden');
-                vidLoop.classList.add('active');
-        
-                // 3. Activar interacción
-                interactionLayer.style.visibility = 'visible';
-
-                // A) Mostrar todos los textos suavemente (Cascada)
-                gsap.to(".menu-label", {
-                    y: 0, 
-                    opacity: 1, 
-                    duration: 1, 
-                    stagger: 0.2, // Que aparezcan uno tras otro
-                    ease: "power2.out",
-                    delay: 0.5 // Espera medio segundo a que el loop se vea bien
-                });
-
-                // B) Ocultarlos automáticamente después de unos segundos
-                // Esto le enseña al usuario que ahí hay texto
-                gsap.to(".menu-label", {
-                    y: 20, 
-                    opacity: 0, 
-                    duration: 1, 
-                    stagger: 0.1, 
-                    ease: "power2.in",
-                    delay: 4.5, // 0.5 entrada + 3s de lectura + 1s salida
-                    overwrite: "auto" // VITAL: Si el usuario hace hover antes, esto se cancela para no molestar
-                });
-                
-                // 4. Detener el intro un poco después para ahorrar recursos
-                setTimeout(() => vidIntro.pause(), 1000);
-            }
-        });
-
-        
-            // --- 3. LÓGICA PREMIUM DE INTERACCIÓN (VIDEO + TEXTO) ---
-            
-            // Función Maestra: ACTIVAR (Mostrar Video y Texto)
-            function activateState(hoverVideoId, textId, color) {
-                if (isTransitioning) return;
-                activeHoverColor = color; // Marcamos quien manda
-
-                const vid = document.getElementById(hoverVideoId);
-                const txt = document.getElementById(textId);                 
+    // --- 0. PROTOCOLO DE AMNESIA (EJECUCIÓN INMEDIATA) ---
+    // Esto se ejecuta antes que cualquier otra cosa para apagar el botón visualmente
+    if(audioBtn) {
+        // Forzamos la eliminación de la clase, sin importar qué diga el HTML
+        audioBtn.classList.remove('active'); 
+        // Clonamos el nodo para eliminar listeners viejos (truco de limpieza extrema)
+        // Nota: Solo hacemos esto si hay problemas graves de eventos fantasmas, 
+        // pero por ahora confiaremos en el remove('active').
+    }
     
-                // ---  SI EL VIDEO YA TERMINÓ, REINICIAR DESDE 0 (O 3) ---
-                // Esto asegura que si vuelves a entrar, no se quede negro o congelado al final.
-                if (vid.ended || vid.paused) {
-                    // Opción A: Siempre desde el principio absoluto al entrar
-                    vid.currentTime = 0; 
-                    
-                    // Opción B: Si prefieres que al entrar YA empiece en el bucle corto
-                    // vid.currentTime = LOOP_START_TIME; 
-                }                
+    // Limpieza de memoria del navegador
+    try { localStorage.removeItem('ululato_sound_pref'); } catch(e){}
 
-                // Sincronizar video
-               // if (vidLoop.readyState > 0) vid.currentTime = vidLoop.currentTime;
-                vid.play();
+    // Configuración del video para Autoplay
+    if(video) {
+        video.muted = true; // OBLIGATORIO para autoplay
+        video.volume = 1;        
+      
+    }
 
-                // Animación Video
-                gsap.to(vid, { opacity: 1, duration: 0.4, ease: "power2.out" });
-                               
-                // Animación Texto (Slide Up + Fade In)
-                gsap.to(txt, { 
-                    y: 0, 
-                    opacity: 1, 
-                    duration: 0.5, 
-                    ease: "back.out(1.7)",
-                    overwrite: "auto"
-                });
+    // ==========================================
+    // 1. ESTRELLAS
+    // ==========================================
+    const sCtx = starCanvas ? starCanvas.getContext('2d') : null;
+    let width, height, stars = [], loadProgress = 0, isWarping = false;
+
+    function initStars() {
+        if(!starCanvas) return;
+        width = starCanvas.width = window.innerWidth; 
+        height = starCanvas.height = window.innerHeight;
+        stars = [];
+        for(let i=0; i<400; i++) {
+            stars.push({
+                x: Math.random() * width - width / 2,
+                y: Math.random() * height - height / 2,
+                z: Math.random() * width,
+                color: Math.random() > 0.5 ? '#D4AF37' : '#00F0FF',
+                size: Math.random() * 2
+            });
+        }
+    }
+    
+    if (!hasIntroFinished) { initStars(); window.addEventListener('resize', initStars); }
+
+    function animateStars() {
+        if (!isSceneActive || hasIntroFinished) return; 
+
+        sCtx.fillStyle = isWarping ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 1)'; 
+        sCtx.fillRect(0, 0, width, height);
+
+        // --- LOOP DE SINCRONIZACIÓN VISUAL ---
+        // Esto es un "policía" que vigila 60 veces por segundo:
+        // Si el video está mudo, el botón DEBE estar apagado.
+        if(audioBtn && video) {
+            if(video.muted && audioBtn.classList.contains('active')) {
+                audioBtn.classList.remove('active'); 
+            }
+        }
+        
+        stars.forEach(s => {
+            let speed = 2 + (loadProgress * 2.0);
+            if(isWarping) speed = 80; 
+            s.z -= speed;
+            if (s.z <= 0) { s.z = width; s.x = Math.random()*width-width/2; s.y = Math.random()*height-height/2; }
+            let x = (s.x / s.z) * width + width / 2; let y = (s.y / s.z) * height + height / 2; let r = (1 - s.z / width) * s.size * 2;
+            if(isWarping) r *= 1.5; 
+            sCtx.beginPath(); sCtx.arc(x, y, r, 0, Math.PI*2); sCtx.fillStyle = s.color; sCtx.fill();
+        });
+        starAnimId = requestAnimationFrame(animateStars);
+    }
+
+    // LOGICA DE CARGA
+    const loadText = document.getElementById('loadText');
+    const loadFill = document.getElementById('loadFill');
+    const loadWrap = document.getElementById('loadLineWrap');
+
+    function simLoad() {
+        if (!isSceneActive || hasIntroFinished) return;
+        let increment = Math.random() * 0.8; 
+        loadProgress += increment;
+        if (loadProgress >= 100) {
+            loadProgress = 100;
+            isWarping = true;
+            if(preloader) preloader.classList.add('text-fade-out');
+            initTunnelAnimation(); 
+        } else {
+            if(loadText) loadText.innerText = Math.floor(loadProgress) + '%';
+            if(loadWrap) loadWrap.style.width = Math.min(loadProgress * 3, 250) + 'px'; 
+            if(loadFill) loadFill.style.width = loadProgress + '%';
+            loadAnimId = requestAnimationFrame(simLoad);
+        }
+    }
+
+    // ==========================================
+    // 2. TÚNEL
+    // ==========================================
+    let renderer, scene, camera, clock;
+    function initTunnelAnimation() {
+        if (renderer || hasIntroFinished) return; 
+        const CONFIG = { duration: 4.5, fadeStart: 3.0, fadeEnd: 4.0, speed: 3500, innerRadius: 140, radiusVar: 220, count: 350, stretch: 12 };
+        
+        const textureLoader = new THREE.TextureLoader();
+        textureLoader.load("https://raw.githubusercontent.com/navin-navi/codepen-assets/master/images/smoke.png", (texture) => {
+            const glContainer = document.getElementById("webgl-container");
+            if(!glContainer) return; 
+            glContainer.classList.add('active'); 
+            setTimeout(() => { if(starContainer) starContainer.classList.add('fade-out'); cancelAnimationFrame(starAnimId); }, 800);
+
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 1, 10000);
+            camera.position.z = 1000;
+            clock = new THREE.Clock();
+
+            const ambient = new THREE.AmbientLight(0x555555); scene.add(ambient);
+            const light = new THREE.PointLight(0xffffff, 5, 1000); light.position.set(0,0,-2000); scene.add(light);
+            const mat = new THREE.MeshLambertMaterial({ map: texture, transparent: true, opacity: 1, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+            const geo = new THREE.PlaneBufferGeometry(400,400);
+            
+            let clouds = [];
+            for(let i=0; i<CONFIG.count; i++) {
+                let c = new THREE.Mesh(geo, mat.clone());
+                let z = (Math.random()*10000)-5000;
+                let a = Math.random()*Math.PI*2;
+                let r = CONFIG.innerRadius + (Math.random()*CONFIG.radiusVar);
+                c.position.set(Math.cos(a)*r, Math.sin(a)*r, z);
+                c.rotation.z = Math.random()*360;
+                c.scale.set(1.5, 1.5, CONFIG.stretch);
+                if(Math.random()>0.5) c.material.color.setHex(0x00aaff); else c.material.color.setHex(0xffaa00);
+                c.userData = { r: r, a: a };
+                clouds.push(c); scene.add(c);
             }
 
-            // Función Maestra: DESACTIVAR (Ocultar si nos vamos)
-            function deactivateState(hoverVideoId, textId, color, relatedTarget) {
-                // Si nos movemos hacia el texto o hacia la cinta del mismo color, NO APAGAMOS
-                if (relatedTarget && (relatedTarget.id === textId || relatedTarget.dataset.color === color)) {
-                    return; 
+            renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "high-performance" });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0x000000, 0); 
+            glContainer.appendChild(renderer.domElement);
+
+           function animate() {
+                if (!isSceneActive || hasIntroFinished) return;
+                let elapsed = clock.getElapsedTime();
+                
+                // ... (Tu código de movimiento de cámara y nubes sigue igual) ...
+                camera.position.z -= CONFIG.speed * 0.016;
+                clouds.forEach(c => { if(c.position.z > camera.position.z + 500) c.position.z -= 10000; });
+                camera.position.x = (Math.random()-0.5)*10; camera.position.y = (Math.random()-0.5)*10;
+                scene.rotation.z += 0.003;
+
+                // Fades y Expansión (Igual que antes)
+                if (elapsed > CONFIG.fadeStart && !document.body.classList.contains('reveal-video')) {
+                    document.body.classList.add('reveal-video');
                 }
+                if (elapsed > CONFIG.fadeStart) {
+                     let progress = (elapsed - CONFIG.fadeStart) / (CONFIG.fadeEnd - CONFIG.fadeStart);
+                     progress = Math.min(progress, 1);
+                     let expansion = Math.pow(progress, 3) * 3000;
+                     clouds.forEach(c => {
+                        let r = c.userData.r + expansion;
+                        c.position.x = Math.cos(c.userData.a) * r;
+                        c.position.y = Math.sin(c.userData.a) * r;
+                        c.scale.z = THREE.MathUtils.lerp(CONFIG.stretch, 1, progress);
+                        c.material.opacity = 1 * (1 - progress);
+                    });
+                }}
 
-                activeHoverColor = null;
-                const vid = document.getElementById(hoverVideoId);
-                const txt = document.getElementById(textId);
-
-                // Ocultar Video
-                gsap.to(vid, { 
-                    opacity: 0, 
-                    duration: 0.4, 
-                    ease: "power2.out", 
-                    onComplete: () => vid.pause() 
-                });
-
-                // Ocultar Texto
-                gsap.to(txt, { 
-                    y: 20, 
-                    opacity: 0, 
-                    duration: 0.3, 
-                    overwrite: "auto"
-                });
-            }
-
-            // --- APLICAR LOGICA A LAS CINTAS (ZONES) ---
-               zones.forEach(zone => {
-            const { hoverId, textId, color, url } = zone.dataset;
-
-            zone.addEventListener('mouseenter', () => {
-                activateState(hoverId, textId, color);
-                
-                // ESTRATEGIA 2: Ocultar Título Guía (#hero-cta) si existe
-                gsap.to("#hero-cta", { opacity: 0, duration: 0.5, overwrite: "auto" });
-
-                // CURSOR (Si existe en el HTML)
-                if(customCursor) customCursor.classList.add('active');
-            });
-            
-            zone.addEventListener('mouseleave', (e) => {
-                deactivateState(hoverId, textId, color, e.relatedTarget);
-                if(customCursor) customCursor.classList.remove('active');
-            });
-
-            zone.addEventListener('click', () => triggerTransition(color, url));
-        });
-
-        // --- LISTENERS TEXTOS ---
-        labels.forEach(label => {
-            const color = label.dataset.color;
-            const zone = document.querySelector(`.interaction-zone[data-color="${color}"]`);
-            
-            if(zone){
-                const { hoverId, url } = zone.dataset;
-                
-                label.addEventListener('mouseenter', () => activateState(hoverId, label.id, color));
-                label.addEventListener('mouseleave', (e) => deactivateState(hoverId, label.id, color, e.relatedTarget));
-                label.addEventListener('click', () => triggerTransition(color, url));
-            }
-        });
-         
-        // --- 4. LÓGICA DE TRANSICIÓN ---
-        function triggerTransition(colorName, url) {
-            isTransitioning = true;
-            
-            // Desactivar interacción inmediatamente
-            interactionLayer.style.pointerEvents = 'none';
-
-            
-            // Ocultar UI
-            gsap.to(".menu-label", { opacity: 0, duration: 0.2 });
-            gsap.to("#hero-cta", { opacity: 0, duration: 0.2 }); // Ocultar título si sigue ahí
-
-            // Definir fuente del video de transición
-            // Estructura esperada: "https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/TransitionCintaYellow.mp4"
-            const videoFile = `${videoPathPrefix}TransitionCinta${colorName}.mp4`;
-            vidTrans.src = videoFile;
-            vidTrans.load();
-
-            // Cuando el video de transición esté listo
-            vidTrans.oncanplaythrough = () => {
-                vidTrans.play();
-
-                // Switch visual Loop -> Transición
-                vidLoop.classList.remove('active');
-                vidLoop.classList.add('hidden'); // Opcional: pausar vidLoop aquí para ahorrar CPU
-
-                vidTrans.classList.remove('hidden');
-                vidTrans.classList.add('active');
-            };
-
-            // --- 5. FIN Y REDIRECCIÓN ---
-            vidTrans.onended = () => {
-                // Fade out a negro (o blanco) antes de cambiar de página
-                gsap.to(vidTrans, {
-                    opacity: 0,
-                    duration: 0.8,
-                    onComplete: () => {
-                        window.location.href = url;
+                // PLAY VIDEO (Autoplay Seguro)
+                if (elapsed > (CONFIG.fadeEnd - 0.5) ) {
+                     // Solo intentamos si está pausado
+                    if (video.paused) {
+                        // VERIFICACIÓN CRÍTICA: ¿El video tiene datos para mostrar?
+                        // readyState 3 = HAVE_FUTURE_DATA (Suficiente para reproducir)
+                        if (video.readyState >= 3) {
+                            video.muted = true; // Aseguramos mute
+                            
+                            // Promesa simple. Si falla, el bucle volverá a intentar en el siguiente frame
+                            // pero solo si readyState sigue siendo válido.
+                            let playPromise = video.play();
+                            if (playPromise !== undefined) {
+                                playPromise.catch(e => {
+                                    // Error silencioso. No hacemos nada, el bucle reintentará.
+                                });
+                            }
+                        } else {
+                            // Si no tiene datos, NO hacemos play(). 
+                            // Dejamos que el navegador siga cargando sin interrumpirlo.
+                        }
                     }
-                });
-            };
-        }
+                }
+                
+                if (elapsed >= CONFIG.duration) { finishIntro(); return; }
+                renderer.render(scene, camera);
+                tunnelAnimId = requestAnimationFrame(animate);
+            }
+            animate();
+        });
+    }
 
-        // --- LÓGICA DE BUCLE PERSONALIZADO (START & END) ---
-// Escanea todos los videos que tengan configuración de bucle
-document.querySelectorAll('.hover-video[data-loop-end]').forEach(video => {
+    function finishIntro() {
+        hasIntroFinished = true;
+        document.body.classList.add('loaded'); // Esta clase es vital para el Script 3
+        
+        const glContainer = document.getElementById('webgl-container');
+        if(glContainer) {
+            glContainer.style.transition = 'opacity 1s';
+            glContainer.style.opacity = '0';
+            setTimeout(() => { if(renderer) renderer.dispose(); glContainer.remove(); }, 1000);
+        }
+        if(starContainer) starContainer.style.display = 'none'; 
+        initNeuralVeil(); 
+    }
+
+    // 3. CAPA NEURAL
+    const neuralCanvas = document.getElementById('neural-canvas');
+    const nCtx = neuralCanvas.getContext('2d');
+    let nW, nH, nodes = [], mouse = { x: null, y: null };
+    function initNeuralVeil() { 
+        if(nodes.length === 0) { resizeNeural(); window.addEventListener('resize', resizeNeural); window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; }); createNodes(); }
+        animateNeural(); 
+    }
+    function resizeNeural() { nW = neuralCanvas.width = window.innerWidth; nH = neuralCanvas.height = window.innerHeight; }
+    class Node {
+        constructor() { this.x = Math.random()*nW; this.y = Math.random()*nH; this.vx = (Math.random()-0.5)*0.5; this.vy = (Math.random()-0.5)*0.5; this.size = Math.random()*3+2; this.color = Math.random()>0.7?'rgba(0,240,255,':'rgba(255,255,255,'; }
+        update() { this.x+=this.vx; this.y+=this.vy; if(this.x<0||this.x>nW)this.vx*=-1; if(this.y<0||this.y>nH)this.vy*=-1; }
+        draw() { let dx=mouse.x-this.x; let dy=mouse.y-this.y; let dist=Math.sqrt(dx*dx+dy*dy); if(dist<250){ let alpha=(250-dist)/250; nCtx.beginPath(); nCtx.arc(this.x,this.y,this.size,0,Math.PI*2); nCtx.fillStyle=this.color+alpha*0.8+')'; nCtx.fill(); } }
+    }
+    function createNodes() { nodes=[]; for(let i=0; i<150; i++) nodes.push(new Node()); }
     
-    video.addEventListener('timeupdate', () => {
-        // Leemos los tiempos configurados en el HTML
-        // Usamos parseFloat por si pones decimales (ej: 6.5)
-        const loopStart = parseFloat(video.dataset.loopStart) || 0;
-        const loopEnd = parseFloat(video.dataset.loopEnd);
+    function animateNeural() { 
+        if (!isSceneActive) return; 
 
-        // Si el video llega (o se pasa) del tiempo final...
-        if (loopEnd && video.currentTime >= loopEnd) {
-            // ... rebobinamos al tiempo de inicio
-            video.currentTime = loopStart;
-             // Forzamos reproducción por si acaso
-            if (video.paused) video.play();
-        }
-    });
-});
-
-           // --- 6. LOGICA MOUSE MOVE (CURSOR) ---
-        // Esto solo funciona si agregas <div class="custom-cursor"></div> al HTML
-        if(customCursor) {
-            document.addEventListener('mousemove', (e) => {
-                gsap.to(customCursor, { x: e.clientX, y: e.clientY, duration: 0.1 });
-            });
+        // SINCRONIZACIÓN FINAL
+        if(audioBtn && video) {
+            if(video.muted && audioBtn.classList.contains('active')) {
+                audioBtn.classList.remove('active');
+            }
         }
         
-        // --- OPTIMIZACIÓN ---
-        // Aseguramos que los videos ocultos se pausen para no consumir recursos
-        // (Excepto durante los crossfades cortos)
-    });
-    
+        nCtx.clearRect(0,0,nW,nH); nodes.forEach(node=>{node.update();node.draw();}); 
+        neuralAnimId = requestAnimationFrame(animateNeural); 
+    }
+
+    // 4. CONTROLADOR DE CLIC (AUDIO)
+    if(audioBtn) {
+        // Clonar para limpiar eventos previos (opcional pero recomendado si hay duplicados)
+        const newAudioBtn = audioBtn.cloneNode(true);
+        audioBtn.parentNode.replaceChild(newAudioBtn, audioBtn);
+        
+        newAudioBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); 
+            // Invertimos estado
+            if (video.muted) {
+                video.muted = true;
+                video.volume = 1;
+                newAudioBtn.classList.add('active');
+            } else {
+                video.muted = true;
+                newAudioBtn.classList.remove('active');
+            }
+        });
+    }
+    // 5. OBSERVER
+    const sectionObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                isSceneActive = true;
+                if (hasIntroFinished) {
+                    // Regreso
+                    if(video && video.paused) { video.muted = true; video.play().catch(()=>{}); }
+                    animateNeural();
+                    if(preloader) preloader.style.display = 'none';
+                    if(starContainer) starContainer.style.display = 'none';
+                } else {
+                    // Inicio
+                    if (loadProgress < 100 && !loadAnimId) { animateStars(); simLoad(); }
+                }
+            } else {
+                isSceneActive = false;
+                cancelAnimationFrame(starAnimId);
+                cancelAnimationFrame(tunnelAnimId);
+                cancelAnimationFrame(neuralAnimId);
+                cancelAnimationFrame(loadAnimId);
+                if(video && !video.paused) video.pause();
+            }
+        });
+    }, { threshold: 0.1 }); 
+    const target = document.getElementById(containerId);
+    if(target) sectionObserver.observe(target);
+
+} // CIERRE BLOQUE
 </script>
 
         // ==========================================================================================================================================================
