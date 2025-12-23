@@ -745,130 +745,156 @@
         video.load(); 
     }
 
-    // ==========================================
-    // 1. ESTRELLAS
-    // ==========================================
-    const sCtx = starCanvas ? starCanvas.getContext('2d') : null;
-    let width, height, stars = [], loadProgress = 0, isWarping = false;
+       // ==========================================
+        // 1. ESTRELLAS: 2D Canvas (CONTINUIDAD FLUIDA)
+        // ==========================================
+    
+        const starCanvas = document.getElementById('loader-canvas');
+        const sCtx = starCanvas.getContext('2d');
+        const starContainer = document.getElementById('loader-canvas-container');
+        let width, height, stars = [], loadProgress = 0, isWarping = false;
+        
+        function initStars() {
+            width = starCanvas.width = window.innerWidth; 
+            height = starCanvas.height = window.innerHeight;
+            stars = [];
+            for(let i=0; i<400; i++) {
+                stars.push({
+                    x: Math.random() * width - width / 2,
+                    y: Math.random() * height - height / 2,
+                    z: Math.random() * width,
+                    color: Math.random() > 0.5 ? '#D4AF37' : '#00F0FF',
+                    size: Math.random() * 2
+                });
+            }
+        }
+        
+        let starAnimId;
+        function animateStars() {
+            // Fondo ligeramente transparente en Warp para crear estelas, pero siempre base negra
+            sCtx.fillStyle = isWarping ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 1)'; 
+            sCtx.fillRect(0, 0, width, height);
+            
+            stars.forEach(s => {
+                let speed = 2 + (loadProgress * 2.0);
+                if(isWarping) speed = 80; // Aceleración suave
+                
+                s.z -= speed;
+                if (s.z <= 0) { 
+                    s.z = width; 
+                    s.x = Math.random() * width - width / 2; 
+                    s.y = Math.random() * height - height / 2; 
+                }
+                
+                let x = (s.x / s.z) * width + width / 2;
+                let y = (s.y / s.z) * height + height / 2;
+                
+                let r = (1 - s.z / width) * s.size * 2;
+                if(isWarping) r *= 1.5; 
 
-    function initStars() {
-        if(!starCanvas) return;
-        width = starCanvas.width = window.innerWidth; 
-        height = starCanvas.height = window.innerHeight;
-        stars = [];
-        for(let i=0; i<400; i++) {
-            stars.push({
-                x: Math.random() * width - width / 2,
-                y: Math.random() * height - height / 2,
-                z: Math.random() * width,
-                color: Math.random() > 0.5 ? '#D4AF37' : '#00F0FF',
-                size: Math.random() * 2
+                sCtx.beginPath();
+                sCtx.arc(x, y, r, 0, Math.PI*2);
+                sCtx.fillStyle = s.color;
+                sCtx.fill();
             });
+            starAnimId = requestAnimationFrame(animateStars);
         }
-    }
-    
-    if (!hasIntroFinished) {
-        initStars();
+
         window.addEventListener('resize', initStars);
-    }
+        initStars();
+        animateStars();
 
-    function animateStars() {
-        if (!isSceneActive || hasIntroFinished) return; 
+        // LOGICA DE CARGA & INICIO DE FUSIÓN
+        const loadText = document.getElementById('loadText');
+        const loadFill = document.getElementById('loadFill');
+        const loadWrap = document.getElementById('loadLineWrap');
+        const preloader = document.getElementById('preloader');
 
-        sCtx.fillStyle = isWarping ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 1)'; 
-        sCtx.fillRect(0, 0, width, height);
-        
-        stars.forEach(s => {
-            let speed = 2 + (loadProgress * 2.0);
-            if(isWarping) speed = 80; 
-            s.z -= speed;
-            if (s.z <= 0) { 
-                s.z = width; s.x = Math.random() * width - width / 2; s.y = Math.random() * height - height / 2; 
+        function simLoad() {
+            let increment = Math.random() * 0.5; 
+            loadProgress += increment;
+            
+            if (loadProgress >= 100) {
+                loadProgress = 100;
+                isWarping = true; // Activar Warp
+                preloader.classList.add('text-fade-out');
+                
+                // ARRANCAR TÚNEL INMEDIATAMENTE
+                initTunnelAnimation(); 
+
+            } else {
+                loadText.innerText = Math.floor(loadProgress) + '%';
+                loadWrap.style.width = Math.min(loadProgress * 3, 250) + 'px'; 
+                loadFill.style.width = loadProgress + '%';
+                requestAnimationFrame(simLoad);
             }
-            let x = (s.x / s.z) * width + width / 2;
-            let y = (s.y / s.z) * height + height / 2;
-            let r = (1 - s.z / width) * s.size * 2;
-            if(isWarping) r *= 1.5; 
-            sCtx.beginPath(); sCtx.arc(x, y, r, 0, Math.PI*2); sCtx.fillStyle = s.color; sCtx.fill();
-        });
-        starAnimId = requestAnimationFrame(animateStars);
-    }
-
-    // LOGICA DE CARGA
-    const loadText = document.getElementById('loadText');
-    const loadFill = document.getElementById('loadFill');
-    const loadWrap = document.getElementById('loadLineWrap');
-
-    function simLoad() {
-        if (!isSceneActive || hasIntroFinished) return;
-
-        let increment = Math.random() * 0.8; 
-        loadProgress += increment;
-        
-        if (loadProgress >= 100) {
-            loadProgress = 100;
-            isWarping = true;
-            if(preloader) preloader.classList.add('text-fade-out');
-            initTunnelAnimation(); 
-        } else {
-            if(loadText) loadText.innerText = Math.floor(loadProgress) + '%';
-            if(loadWrap) loadWrap.style.width = Math.min(loadProgress * 3, 250) + 'px'; 
-            if(loadFill) loadFill.style.width = loadProgress + '%';
-            loadAnimId = requestAnimationFrame(simLoad);
         }
-    }
+        requestAnimationFrame(simLoad);
 
-    // ==========================================
-    // 2. TÚNEL DE HUMO
-    // ==========================================
-    let renderer, scene, camera, clock;
     
-    function initTunnelAnimation() {
-        if (renderer || hasIntroFinished) return; 
+        // ==========================================
+        // 2. TÚNEL DE HUMO & VIDEO TIME-FREEZE
+        // ==========================================
+        function initTunnelAnimation() {
+            const CONFIG = {
+                duration: 4.5,            // Duración viaje
+                fadeStart: 3.0,           // Inicio revelación visual
+                fadeEnd: 4.0,             // Fin del humo
+                speed: 3500,              // Velocidad de nubes
+                innerRadius: 140, radiusVar: 220, count: 350, stretch: 12
+            };
 
-        const CONFIG = { duration: 4.5, fadeStart: 3.0, fadeEnd: 4.0, speed: 3500, innerRadius: 140, radiusVar: 220, count: 350, stretch: 12 };
-        
-        const textureLoader = new THREE.TextureLoader();
-        textureLoader.load("https://raw.githubusercontent.com/navin-navi/codepen-assets/master/images/smoke.png", (texture) => {
-            const glContainer = document.getElementById("webgl-container");
-            if(!glContainer) return; 
+            const video = document.getElementById('bg-video');
+            video.pause(); video.currentTime = 0; // Video congelado
 
-            glContainer.classList.add('active'); 
-            
-            setTimeout(() => { 
-                if(starContainer) starContainer.classList.add('fade-out');
-                cancelAnimationFrame(starAnimId); 
-            }, 800);
+            let scene, camera, renderer, clouds = [], clock = new THREE.Clock();
+            let hasTriggeredFade = false;
+            let hasTriggeredPlay = false;
 
-            scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 1, 10000);
-            camera.position.z = 1000;
-            clock = new THREE.Clock();
+            const textureLoader = new THREE.TextureLoader();
+            textureLoader.load("https://raw.githubusercontent.com/navin-navi/codepen-assets/master/images/smoke.png", (texture) => {
+                
+                // 1. Mostrar WebGL (sobre estrellas)
+                const glContainer = document.getElementById("webgl-container");
+                glContainer.classList.add('active'); 
+                
+                // 2. Desvanecer Estrellas
+                setTimeout(() => {
+                    starContainer.classList.add('fade-out');
+                    setTimeout(() => cancelAnimationFrame(starAnimId), 2000); 
+                }, 800);
 
-            const ambient = new THREE.AmbientLight(0x555555); scene.add(ambient);
-            const light = new THREE.PointLight(0xffffff, 5, 1000); light.position.set(0,0,-2000); scene.add(light);
-            const mat = new THREE.MeshLambertMaterial({ map: texture, transparent: true, opacity: 1, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
-            const geo = new THREE.PlaneBufferGeometry(400,400);
-            
-            let clouds = [];
-            for(let i=0; i<CONFIG.count; i++) {
-                let c = new THREE.Mesh(geo, mat.clone());
-                let z = (Math.random()*10000)-5000;
-                let a = Math.random()*Math.PI*2;
-                let r = CONFIG.innerRadius + (Math.random()*CONFIG.radiusVar);
-                c.position.set(Math.cos(a)*r, Math.sin(a)*r, z);
-                c.rotation.z = Math.random()*360;
-                c.scale.set(1.5, 1.5, CONFIG.stretch);
-                if(Math.random()>0.5) c.material.color.setHex(0x00aaff); else c.material.color.setHex(0xffaa00);
-                c.userData = { r: r, a: a };
-                clouds.push(c); scene.add(c);
-            }
+                scene = new THREE.Scene();
+                camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 1, 10000);
+                camera.position.z = 1000;
 
-            renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "high-performance" });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setClearColor(0x000000, 0); 
-            glContainer.appendChild(renderer.domElement);
+                const ambient = new THREE.AmbientLight(0x555555); scene.add(ambient);
+                const light = new THREE.PointLight(0xffffff, 5, 1000); light.position.set(0,0,-2000); scene.add(light);
 
+                const mat = new THREE.MeshLambertMaterial({
+                    map: texture, transparent: true, opacity: 1, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide
+                });
+                const geo = new THREE.PlaneBufferGeometry(400,400);
+
+                for(let i=0; i<CONFIG.count; i++) {
+                    let c = new THREE.Mesh(geo, mat.clone());
+                    let z = (Math.random()*10000)-5000;
+                    let a = Math.random()*Math.PI*2;
+                    let r = CONFIG.innerRadius + (Math.random()*CONFIG.radiusVar);
+                    c.position.set(Math.cos(a)*r, Math.sin(a)*r, z);
+                    c.rotation.z = Math.random()*360;
+                    c.scale.set(1.5, 1.5, CONFIG.stretch);
+                    if(Math.random()>0.5) c.material.color.setHex(0x00aaff); else c.material.color.setHex(0xffaa00);
+                    c.userData = { r: r, a: a };
+                    clouds.push(c); scene.add(c);
+                }
+
+                renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "high-performance" });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setClearColor(0x000000, 0); 
+                glContainer.appendChild(renderer.domElement);
+
+                
             function animate() {
                 if (!isSceneActive || hasIntroFinished) return;
 
