@@ -903,24 +903,18 @@
                                 });
                             }
             
-                            // PLAY VIDEO (Si aún no suena)                            
-                            if (elapsed > (CONFIG.fadeEnd - 0.5) && video.paused) {
-                                // 1. FORZAMOS SILENCIO para garantizar el Autoplay
-                                video.muted = true; 
-                                
-                                // 2. Intentamos reproducir
-                                video.play().then(() => {
-                                    // 3. (Opcional) Si el usuario tenía el sonido activado antes,
-                                    // intentamos activarlo SUAVEMENTE, pero si falla, no importa, el video ya corre.
-                                    const pref = localStorage.getItem('ululato_sound_pref');
-                                    if (pref === 'on') {
-                                        // Intentamos desmutear, pero si el navegador dice NO, capturamos el error
-                                        // para que el video no se detenga.
-                                        video.muted = false;
-                                    }
-                                }).catch(error => {
-                                    console.log("Autoplay prevenido. Mostrando botón de play manual.");
-                                });
+                            
+                            
+                            
+                              // B. PLAY VIDEO (3.5s)
+                    if (elapsed > (CONFIG.fadeEnd - 0.5) && video.paused) {
+                        video.muted = true
+                        const pref = localStorage.getItem('ululato_sound_pref');
+                        // Si el usuario ya activó el sonido antes, aseguramos que suene
+                        if (pref === 'on') { video.muted = false; video.volume = 1; audioBtn.classList.add('active'); }
+                        video.play().catch(e => console.log("Auto-play blocked pending user interaction"));
+                        hasTriggeredPlay = true;
+                    }
                             }
 
                             
