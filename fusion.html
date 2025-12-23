@@ -207,21 +207,20 @@
         .scene.hidden { opacity: 0; z-index: 0; pointer-events: none; }
         
         /* Capa del Warp */
-        .warp-layer {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 10;
+        #warp-layer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 2000;
             pointer-events: none; /* Nadie lo toca */
             opacity: 0;
             mix-blend-mode: screen; /* Truco Pro: Elimina el fondo negro del video warp */
+            background-color: black; /* Evita que se vea lo de atrás */
         }
 
 
 
         <!-- ========================================= -->
         <!-- ESCENA 2 -->
-        <!-- ========================================= -->
-
-    
+        <!-- ========================================= --> 
         
         
         
@@ -740,6 +739,13 @@
                 const starContainer = document.getElementById('loader-canvas-container');
                 const video = document.getElementById('bg-video');
                 const preloader = document.getElementById('preloader');
+                const audioBtn = document.getElementById('audioBtn');
+
+                 // RESETEO AGRESIVO AL INICIO
+    localStorage.removeItem('ululato_sound_pref');
+    if(video) video.muted = true;
+    if(audioBtn) audioBtn.classList.remove('active');
+                
             
                 // --- CARGA DINÁMICA DEL VIDEO ---
                 if (video && video.dataset.src && !video.src) {
@@ -779,6 +785,15 @@
             
                     sCtx.fillStyle = isWarping ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 1)'; 
                     sCtx.fillRect(0, 0, width, height);
+
+                    // --- SINCRONIZACIÓN FORZADA DEL BOTÓN (LA SOLUCIÓN) ---
+        // Esto verifica en cada frame: ¿Video mudo? -> Apaga botón.
+        if(audioBtn && video) {
+            if(video.muted && audioBtn.classList.contains('active')) {
+                audioBtn.classList.remove('active');
+            }
+        }
+                    
                     
                     stars.forEach(s => {
                         let speed = 2 + (loadProgress * 2.0);
@@ -971,6 +986,15 @@
                 
                 function animateNeural() { 
                     if (!isSceneActive) return; 
+
+                     // --- SINCRONIZACIÓN FINAL ---
+        if(audioBtn && video) {
+            if(video.muted && audioBtn.classList.contains('active')) {
+                audioBtn.classList.remove('active');
+            }
+        }
+
+                    
                     nCtx.clearRect(0, 0, nW, nH); 
                     nodes.forEach(node => { node.update(); node.draw(); }); 
                     neuralAnimId = requestAnimationFrame(animateNeural); 
@@ -979,7 +1003,7 @@
                 // ==========================================
                 // 5. NUEVO: LÓGICA DE AUDIO (LA PIEZA FALTANTE)
                 // ==========================================
-                const audioBtn = document.getElementById('audioBtn');
+              // const audioBtn = document.getElementById('audioBtn');
                 
                 // A. RESETEO DE SEGURIDAD (La clave del éxito)
                 // Esto asegura que al recargar, el botón y el video estén sincronizados en OFF
@@ -997,11 +1021,11 @@
                             // Activar Sonido
                             video.muted = false;
                             video.volume = 1;
-                           // audioBtn.classList.add('active');
+                            audioBtn.classList.add('active');
                         } else {
                             // Desactivar Sonido
                             video.muted = true;
-                            //audioBtn.classList.remove('active');
+                            audioBtn.classList.remove('active');
                         }
                     });
                 }
