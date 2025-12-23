@@ -209,7 +209,7 @@
         /* Capa del Warp */
         #warp-layer {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 2000;
+            z-index: 9999;
             pointer-events: none; /* Nadie lo toca */
             opacity: 0;
             mix-blend-mode: screen; /* Truco Pro: Elimina el fondo negro del video warp */
@@ -1281,12 +1281,15 @@
                 // 2. Condiciones
                 const scrollingDown = e.deltaY > 0;
                 const notWarping = !isWarping; // Evita dispararlo doble vez
+
+                 // DEBUG: Descomenta esta línea si quieres ver si detecta el scroll en la consola
+                  console.log("Scroll detectado:", e.deltaY, "Escena 1 Activa:", isScene1Active);
                 
                 // 3. GATILLO
                 if (scrollingDown && isScene1Active && notWarping) {
                     console.log("🚀 Validado: Iniciando Warp a Escena 2");
                     isWarping = true; // Bloqueamos inmediatamente
-                    initWarpSequence(); // <--- AQUÍ CORREGÍ EL NOMBRE DE LA FUNCIÓN
+                    initWarpSequence(); // 
                 }
         
             }, { passive: true });
