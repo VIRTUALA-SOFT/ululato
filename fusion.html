@@ -34,6 +34,7 @@
             height: 100vh; width: 100vw; 
         }
         
+        
         * { box-sizing: border-box; cursor: none; }
 
         /* --- 1. FONDO DE ESTRELLAS (Canvas separado) --- */
@@ -187,6 +188,39 @@
             .scroll-indicator { display: none; }
             .audio-toggle { bottom: 30px; right: 30px; }
         }
+
+
+         <!-- ========================================= -->
+        <!-- FUSION-->
+        <!-- ========================================= -->
+
+        body { overflow: hidden; background: #000; }
+
+        .scene {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            transition: opacity 1s ease;
+        }
+        
+        .scene.active { opacity: 1; z-index: 1; pointer-events: auto; }
+        .scene.hidden { opacity: 0; z-index: 0; pointer-events: none; }
+        
+        /* Capa del Warp */
+        .warp-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 10;
+            pointer-events: none; /* Nadie lo toca */
+            opacity: 0;
+            mix-blend-mode: screen; /* Truco Pro: Elimina el fondo negro del video warp */
+        }
+
+
+
+        <!-- ========================================= -->
+        <!-- ESCENA 2 -->
+        <!-- ========================================= -->
+        
+          
+        
     </style>
 </head>
 <body style="background-color: #000000;">
@@ -205,106 +239,230 @@
         </div>
     </div>
 
-    <!-- 3. VIDEO BACKGROUND -->
-    <div class="video-container">
-        <!-- preload="auto" para que esté listo al instante -->
-        <video id="bg-video" loop muted playsinline preload="auto">
-            <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/ULULATOIA.mp4" type="video/mp4">
-        </video>
-        <div class="video-overlay"></div>
-    </div>
-
-    <!-- 4. WEBGL TÚNEL -->
-    <div id="webgl-container"></div>
-
-    <!-- 5. CAPA NEURAL -->
-    <canvas id="neural-canvas"></canvas>
-
-    <!-- 6. UI COMPLETA -->
-    <nav class="nav-bar">
-        <div class="brand-logo-wrap">
-            <img src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/imagenes/Logo.png" alt="Ululato Logo" class="brand-logo-img">
-        </div>
-        <button class="menu-trigger" id="openMenu">
-            <div class="trigger-glow"></div>
-            <svg class="trigger-rings">
-                <rect class="ring ring-base" x="0" y="0" width="100%" height="100%"></rect>
-                <rect class="ring ring-gold" x="0" y="0" width="100%" height="100%"></rect>
-                <rect class="ring ring-light" x="0" y="0" width="100%" height="100%"></rect>
-            </svg>
-            <span class="trigger-text">Explorar</span>
-        </button>
-    </nav>
-
-    <!-- MENÚ COMPLETO -->
-    <div class="menu-curtain" id="menuCurtain">
-        <div class="menu-atmosphere" id="menuAtmosphere"></div>
-        <button class="close-btn" id="closeMenu">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13 1L1 13M1 1L13 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-        </button>
-        <ul class="menu-list">
-            <li class="menu-item">
-                <a href="#" class="menu-link" data-color="rgba(34, 139, 34, 0.6)">
-                    <div class="nav-number-wrap">
-                        <svg class="number-ring-svg" viewBox="0 0 50 50"><circle class="small-ring" cx="25" cy="25" r="20"></circle></svg>
-                        <span class="nav-number">01</span>
+    <main id="master-container">
+         <section id="scene-material" class="scene active">
+                 <!-- ========================================= -->
+                <!-- ESCENA 1: HERO -->
+                <!-- ========================================= -->
+                
+                <!-- 3. VIDEO BACKGROUND -->
+                <div class="video-container">
+                    <!-- preload="auto" para que esté listo al instante -->
+                    <video id="bg-video" loop muted playsinline preload="auto">
+                        <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/ULULATOIA.mp4" type="video/mp4">
+                    </video>
+                    <div class="video-overlay"></div>
+                </div>
+            
+                <!-- 4. WEBGL TÚNEL -->
+                <div id="webgl-container"></div>
+            
+                <!-- 5. CAPA NEURAL -->
+                <canvas id="neural-canvas"></canvas>
+            
+                <!-- 6. UI COMPLETA -->
+                <nav class="nav-bar">
+                    <div class="brand-logo-wrap">
+                        <img src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/imagenes/Logo.png" alt="Ululato Logo" class="brand-logo-img">
                     </div>
-                    MANIFIESTO
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="#" class="menu-link" data-color="rgba(218, 165, 32, 0.6)">
-                    <div class="nav-number-wrap">
-                        <svg class="number-ring-svg" viewBox="0 0 50 50"><circle class="small-ring" cx="25" cy="25" r="20"></circle></svg>
-                        <span class="nav-number">02</span>
-                    </div>
-                    COMUNIDADES
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="#" class="menu-link" data-color="rgba(178, 34, 34, 0.6)">
-                    <div class="nav-number-wrap">
-                        <svg class="number-ring-svg" viewBox="0 0 50 50"><circle class="small-ring" cx="25" cy="25" r="20"></circle></svg>
-                        <span class="nav-number">03</span>
-                    </div>
-                    MERCADO
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="#" class="menu-link" data-color="rgba(0, 191, 255, 0.5)">
-                    <div class="nav-number-wrap">
-                        <svg class="number-ring-svg" viewBox="0 0 50 50"><circle class="small-ring" cx="25" cy="25" r="20"></circle></svg>
-                        <span class="nav-number">04</span>
-                    </div>
-                    CONTACTO
-                </a>
-            </li>
-        </ul>
-    </div>
-
-    <main class="hero">
-        <h1>
-            <div class="hero-title-container">
-                <span class="hero-title" id="glitchTitle1">SOMOS</span>
-                <span class="hero-title" id="glitchTitle2">ORIGEN</span>
+                    <button class="menu-trigger" id="openMenu">
+                        <div class="trigger-glow"></div>
+                        <svg class="trigger-rings">
+                            <rect class="ring ring-base" x="0" y="0" width="100%" height="100%"></rect>
+                            <rect class="ring ring-gold" x="0" y="0" width="100%" height="100%"></rect>
+                            <rect class="ring ring-light" x="0" y="0" width="100%" height="100%"></rect>
+                        </svg>
+                        <span class="trigger-text">Explorar</span>
+                    </button>
+                </nav>
+            
+                <!-- MENÚ COMPLETO -->
+                <div class="menu-curtain" id="menuCurtain">
+                    <div class="menu-atmosphere" id="menuAtmosphere"></div>
+                    <button class="close-btn" id="closeMenu">
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13 1L1 13M1 1L13 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    </button>
+                    <ul class="menu-list">
+                        <li class="menu-item">
+                            <a href="#" class="menu-link" data-color="rgba(34, 139, 34, 0.6)">
+                                <div class="nav-number-wrap">
+                                    <svg class="number-ring-svg" viewBox="0 0 50 50"><circle class="small-ring" cx="25" cy="25" r="20"></circle></svg>
+                                    <span class="nav-number">01</span>
+                                </div>
+                                MANIFIESTO
+                            </a>
+                        </li>
+                        <li class="menu-item">
+                            <a href="#" class="menu-link" data-color="rgba(218, 165, 32, 0.6)">
+                                <div class="nav-number-wrap">
+                                    <svg class="number-ring-svg" viewBox="0 0 50 50"><circle class="small-ring" cx="25" cy="25" r="20"></circle></svg>
+                                    <span class="nav-number">02</span>
+                                </div>
+                                COMUNIDADES
+                            </a>
+                        </li>
+                        <li class="menu-item">
+                            <a href="#" class="menu-link" data-color="rgba(178, 34, 34, 0.6)">
+                                <div class="nav-number-wrap">
+                                    <svg class="number-ring-svg" viewBox="0 0 50 50"><circle class="small-ring" cx="25" cy="25" r="20"></circle></svg>
+                                    <span class="nav-number">03</span>
+                                </div>
+                                MERCADO
+                            </a>
+                        </li>
+                        <li class="menu-item">
+                            <a href="#" class="menu-link" data-color="rgba(0, 191, 255, 0.5)">
+                                <div class="nav-number-wrap">
+                                    <svg class="number-ring-svg" viewBox="0 0 50 50"><circle class="small-ring" cx="25" cy="25" r="20"></circle></svg>
+                                    <span class="nav-number">04</span>
+                                </div>
+                                CONTACTO
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            
+                <main class="hero">
+                    <h1>
+                        <div class="hero-title-container">
+                            <span class="hero-title" id="glitchTitle1">SOMOS</span>
+                            <span class="hero-title" id="glitchTitle2">ORIGEN</span>
+                        </div>
+                        <span class="hero-sub">CONECTANDO LA SABIDURÍA ANCESTRAL CON EL FUTURO DIGITAL</span>
+                    </h1>
+                </main>
+            
+                <div class="scroll-indicator" id="scrollIndicator">
+                    <span class="scroll-txt">Scroll para conectar</span>
+                    <div class="scroll-line"><div class="scroll-fill"></div></div>
+                </div>
+            
+                <!-- BOTÓN DE AUDIO (Corregido) -->
+                <button class="audio-toggle" id="audioBtn">
+                    <div class="bars"><div class="bar"></div><div class="bar"></div><div class="bar"></div></div> SONIDO
+                </button>
+         </section>
+        
+        
+                <!-- ========================================= -->
+            <!-- CAPA WARP (PUENTE DE TRANSICIÓN) -->
+            <!-- ========================================= -->
+            <div id="warp-layer">
+                <!-- REEMPLAZA ESTE VIDEO POR TU EFECTO WARP/HIPERESPACIO -->
+                <!-- Si no tienes uno, usa este placeholder o genera uno nuevo -->
+                <video id="warp-video" muted playsinline>
+                    <source src="https://assets.mixkit.co/videos/preview/mixkit-stars-in-space-1610-large.mp4" type="video/mp4">
+                </video>
             </div>
-            <span class="hero-sub">CONECTANDO LA SABIDURÍA ANCESTRAL CON EL FUTURO DIGITAL</span>
-        </h1>
-    </main>
 
-    <div class="scroll-indicator" id="scrollIndicator">
-        <span class="scroll-txt">Scroll para conectar</span>
-        <div class="scroll-line"><div class="scroll-fill"></div></div>
-    </div>
 
-    <!-- BOTÓN DE AUDIO (Corregido) -->
-    <button class="audio-toggle" id="audioBtn">
-        <div class="bars"><div class="bar"></div><div class="bar"></div><div class="bar"></div></div> SONIDO
-    </button>
 
-    <div class="cursor-dot"></div>
-    <div class="cursor-circle"></div>
+         <!-- ========================================= -->
+        <!-- ESCENA 2: DIGITAL (CINTAS) -->
+        <!-- ========================================= -->
 
+    
+    <section id="scene-digital" class="scene hidden hero-inmersive">
+             <!-- CAPA DE VIDEOS -->
+            <div class="video-container">
+                <!-- 1. INTRO -->
+                <video id="vid-intro" class="active" muted playsinline preload="auto">
+                    <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/Tejido.mp4" type="video/mp4">
+                </video>
+            
+                <!-- 2. LOOP (Bucle de las cintas) -->
+                <video id="vid-loop" class="hidden" loop muted playsinline preload="auto">
+                    <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/Tejido2.mp4" type="video/mp4">
+                </video>
+            
+                <!-- === CAPA DE VIDEOS HOVER === -->
+            <!-- Están ocultos (opacity: 0) y pausados por defecto -->
+            
+            <video id="hover-yellow" class="video-layer hover-video"  muted playsinline preload="auto" data-loop-start="2" 
+                   data-loop-end="4">
+                <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/HoverCintaYellow.mp4" type="video/mp4">
+            </video>
+            
+            <video id="hover-blue" class="video-layer hover-video"  muted playsinline preload="auto" data-loop-start="3" 
+                   data-loop-end="4">
+                <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/HoverCintaBlue.mp4" type="video/mp4">
+            </video>
+            
+            <video id="hover-red" class="video-layer hover-video"  muted playsinline preload="auto" data-loop-start="3" 
+                   data-loop-end="4">
+                <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/HoverCintaRed.mp4" type="video/mp4">
+            </video>
+            
+            <video id="hover-green" class="video-layer hover-video"  muted playsinline preload="auto" data-loop-start="3" 
+                   data-loop-end="4">
+                <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/HoverCintaGreen.mp4" type="video/mp4">
+            </video>
+        <!-- =================================== -->
+            
+
+                <!-- 4. TRANSICIÓN (Source dinámico) -->
+                <video id="vid-transition" class="hidden" muted playsinline>
+                    <!-- Se inyecta por JS -->
+                </video>
+          </div>
+
+            <!-- 2. CAPA DE TEXTOS (Menú Flotante) -->
+            <div class="text-overlay-layer">
+                <div id="text-yellow" class="menu-label" data-color="Yellow"><span>Marketplace</span></div>
+                <div id="text-blue"   class="menu-label" data-color="Blue"><span>Cursos Virtuales</span></div>
+                <div id="text-red"    class="menu-label" data-color="Red"><span>Georeferenciación</span></div>
+                <div id="text-green"  class="menu-label" data-color="Green"><span>Comunidad</span></div>
+            </div>
+            
+            <div id="hero-cta" class="hero-cta">
+                <h1>El Origen del Tejido</h1>
+                <p>Explora los hilos para descubrir nuestra historia</p>
+                <div class="mouse-icon"></div> <!-- Opcional: ícono de mouse/dedo -->
+            </div>
+        
+            <div class="custom-cursor"></div>
+            
+                <!-- CAPA DE INTERACCIÓN SVG -->
+                <!-- Ajusta el viewBox a la resolución nativa de tu video (ej: 1920 1080) -->
+                <div class="interaction-layer" id="interaction-layer">
+                    <svg viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+                        
+                        <!-- IMPORTANTE: Reemplaza los atributos d="..." con tus trazados reales -->
+                        
+                        <!-- CINTA AMARILLA -->
+                        <path id="zone-yellow" class="interaction-zone" 
+                              data-color="Yellow" data-url="https://virtuala-soft.github.io/earth/dsc/wayuu/amarilla.html" data-text-id="text-yellow" data-hover-id="hover-yellow"
+                              d="M1414,412c-9-1-277,8-277,8s-307-14-307-14c0,0-293.57,8-293.29,14s-48.71,7-48.71,13,167,99,167,99l200,90,157,84,97,49,24,14-11,36s-21,41-27,41-145-45.56-144-44.78-119-40.22-119-40.22l-152-86-182-95-85-48-45-86-34-82,22.55-22.55h66.2l62.25-23.45h121.95l221.05,18,113-4s133,11,138,16,172,5,172,5l113,8h71.17l-21.17,51Z"></path>
+                        
+                        <!-- CINTA AZUL -->
+                        <path id="zone-blue" class="interaction-zone" 
+                              data-color="Blue" data-url="https://virtuala-soft.github.io/earth/dsc/wayuu/azul.html" data-text-id="text-blue" data-hover-id="hover-blue"
+                              d="M747,319l69.05,69.05,157.95,94.95,138,110,130,118,20.44,20.44s-95.44-15.44-102.44-15.44-96-55-96-55l-87-67-168.21-168.21-49.79-73.79-76-74-24,8,42,74,105,138,102,93,108,95,137,81,98,33,49,9,16-38-5-81-119.66-142.5-145.34-112.5-155-121-104-63-112-14-10,30,82,52Z"></path>
+                
+                        <!-- CINTA ROJA -->
+                        <path id="zone-red" class="interaction-zone" 
+                              data-color="Red" data-url="https://virtuala-soft.github.io/earth/dsc/wayuu/roja.html" data-text-id="text-red" data-hover-id="hover-red"
+                              d="M648,814l-13-71s11-40,18-41,71-62,71-62l147-124,181-169,158-133,75-42,44,67v30.84l-128,105.16-76.15,76.15-94.85,83.85-170,138-138,106-18,45-35,12-21-22Z"></path>
+                
+                        <!-- CINTA VERDE -->
+                        <path id="zone-green" class="interaction-zone" data-text-id="text-green" data-hover-id="hover-green"
+                              data-color="Green" data-url="https://virtuala-soft.github.io/earth/dsc/wayuu/verde.html"
+                              d="M811,820l142-74s197-80,208-85,189-100,189-100l128-86-269-37-138-24-188,32-171,36h-109.03l-37.97,1-11-45,91.38-24s217.62-29,217.62-29,183-10,179-9,206.32-1,206.32-1l144.68,7,99,3,45,19,41,59,16,53-13,53-53,40-106,62-217,104-110,51-121,40-94,28-58-28-24-36,13-10Z"></path>
+                
+                    </svg>
+                </div>
+
+      </section>
+    
+    
+        <div class="cursor-dot"></div>
+        <div class="cursor-circle"></div>
+
+ </main>
+
+
+
+    
     <script>
         // ==========================================
         // 1. ESTRELLAS: 2D Canvas (CONTINUIDAD FLUIDA)
