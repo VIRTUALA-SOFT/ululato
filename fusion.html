@@ -505,12 +505,12 @@
                 <!-- ========================================= -->
                 
                 <!-- 3. VIDEO BACKGROUND -->
-                <div class="video-container">
-                    <!-- preload="auto" para que esté listo al instante -->
-                  <video id="bg-video" loop muted playsinline preload="auto" data-src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/ULULATOA.mp4">                  
-                  </video>
-                    <div class="video-overlay"></div>
-                </div>
+               <div class="video-container">
+    <video id="bg-video" loop muted playsinline preload="auto" 
+        src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/ULULATOA.mp4">
+    </video>
+    <div class="video-overlay"></div>
+</div>
             
                 <!-- 4. WEBGL TÚNEL -->
                 <div id="webgl-container"></div>
@@ -758,13 +758,8 @@
     // Configuración del video para Autoplay
     if(video) {
         video.muted = true; // OBLIGATORIO para autoplay
-        video.volume = 1;
-        
-        // Carga dinámica (Fix para Chrome)
-        if (video.dataset.src && !video.src) {
-            video.src = video.dataset.src;
-            video.load(); 
-        }
+        video.volume = 1;        
+      
     }
 
     // ==========================================
@@ -884,15 +879,17 @@
             renderer.setClearColor(0x000000, 0); 
             glContainer.appendChild(renderer.domElement);
 
-            function animate() {
+           function animate() {
                 if (!isSceneActive || hasIntroFinished) return;
                 let elapsed = clock.getElapsedTime();
                 
+                // ... (Tu código de movimiento de cámara y nubes sigue igual) ...
                 camera.position.z -= CONFIG.speed * 0.016;
                 clouds.forEach(c => { if(c.position.z > camera.position.z + 500) c.position.z -= 10000; });
                 camera.position.x = (Math.random()-0.5)*10; camera.position.y = (Math.random()-0.5)*10;
                 scene.rotation.z += 0.003;
 
+                // Fades y Expansión (Igual que antes)
                 if (elapsed > CONFIG.fadeStart && !document.body.classList.contains('reveal-video')) {
                     document.body.classList.add('reveal-video');
                 }
@@ -907,16 +904,30 @@
                         c.scale.z = THREE.MathUtils.lerp(CONFIG.stretch, 1, progress);
                         c.material.opacity = 1 * (1 - progress);
                     });
-                }
+                }}
 
                 // PLAY VIDEO (Autoplay Seguro)
-                if (elapsed > (CONFIG.fadeEnd - 0.5) && video.paused) {
-                    video.muted = true;
-                    video.play().catch(error => {
-                        // Si falla, intentamos una vez más forzando mute
-                        video.muted = true;
-                        video.play();
-                    });
+                if (elapsed > (CONFIG.fadeEnd - 0.5) ) {
+                     // Solo intentamos si está pausado
+                    if (video.paused) {
+                        // VERIFICACIÓN CRÍTICA: ¿El video tiene datos para mostrar?
+                        // readyState 3 = HAVE_FUTURE_DATA (Suficiente para reproducir)
+                        if (video.readyState >= 3) {
+                            video.muted = true; // Aseguramos mute
+                            
+                            // Promesa simple. Si falla, el bucle volverá a intentar en el siguiente frame
+                            // pero solo si readyState sigue siendo válido.
+                            let playPromise = video.play();
+                            if (playPromise !== undefined) {
+                                playPromise.catch(e => {
+                                    // Error silencioso. No hacemos nada, el bucle reintentará.
+                                });
+                            }
+                        } else {
+                            // Si no tiene datos, NO hacemos play(). 
+                            // Dejamos que el navegador siga cargando sin interrumpirlo.
+                        }
+                    }
                 }
                 
                 if (elapsed >= CONFIG.duration) { finishIntro(); return; }
