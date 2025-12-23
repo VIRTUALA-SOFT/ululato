@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="es" style="background-color: #000000; margin: 0; padding: 0;">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ULULATO | The Network</title>
+    
+    <!-- FUENTES -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Space+Grotesk:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- ICONS -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
+
+    <style>
+        /* --- 0. VARIABLES --- */
+        :root {
+            --gold: #D4AF37;
+            --gold-glow: rgba(212, 175, 55, 0.5);
+            --bg-body: #000000;
+            --bg-nav: #0f0f0f;
+            --bg-sidebar: #0a0a0a; /* Fondo sólido oscuro para legibilidad */
+            --bg-card: rgba(20, 20, 20, 0.7);
+            --bg-hover: rgba(255, 255, 255, 0.08);
+            --text-main: #E4E6EB;
+            --text-sec: #B0B3B8;
+            --border: rgba(255, 255, 255, 0.08);
+            --font-serif: 'Cinzel', serif;
+            --font-sans: 'Space Grotesk', sans-serif;
+            --ease-out: cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        html, body { 
+            margin: 0; padding: 0; 
+            background-color: var(--bg-body) !important;
+            color: var(--text-main); 
+            font-family: var(--font-sans); 
+            height: 100vh; width: 100vw;
+            overflow: hidden; /* El scroll global está oculto, solo scrollean las columnas */
+            transition: opacity 1s ease;
+        }
+        
+        body.fade-out { opacity: 0; }
+        
+        * { box-sizing: border-box; outline: none; cursor: none; }
+        
+        img { max-width: 100%; display: block; }
+
+        /* --- SCROLLBAR PERSONALIZADO (FIX #2 & #3) --- */
+        /* Webkit (Chrome, Safari, Edge) */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { 
+            background: #333; 
+            border-radius: 3px; 
+        }
+        ::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+
+        /* Firefox */
+        .sidebar-left, .sidebar-right, .feed-container {
+            scrollbar-width: thin;
+            scrollbar-color: #333 transparent;
+        }
+
+        /* --- 1. FONDO NEURAL --- */
+        #neural-canvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0; pointer-events: none; opacity: 0.5; mix-blend-mode: screen;
+        }
+
+        /* --- 2. NAVBAR --- */
+        .navbar {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background: var(--bg-nav); border-bottom: 1px solid var(--border);
+            display: grid; grid-template-columns: 280px 1fr 280px; /* Alineación perfecta con el layout */
+            align-items: center; padding: 0; z-index: 500;
+        }
+
+        /* LOGO Y VOLVER (FIX #1) */
+        .nav-left { 
+            display: flex; align-items: center; gap: 15px; padding-left: 20px; 
+            height: 100%; border-right: 1px solid transparent; 
+        }
+        
+        .logo-img { 
+            width: 35px; height: 35px; object-fit: contain; cursor: pointer; flex-shrink: 0;
+        }
+
+        .back-link {
+            text-decoration: none; color: var(--text-sec);
+            font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase;
+            display: flex; align-items: center; gap: 5px;
+            padding: 6px 12px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1);
+            transition: 0.3s; cursor: pointer; white-space: nowrap;
+        }
+        .back-link:hover { border-color: var(--gold); color: var(--gold); }
+
+        /* NAV CENTER */
+        .nav-center { display: flex; justify-content: center; gap: 5px; height: 100%; }
+        .nav-tab {
+            width: 100px; height: 100%; display: flex; justify-content: center; align-items: center;
+            color: var(--text-sec); border-bottom: 3px solid transparent; cursor: pointer; transition: 0.2s; position: relative;
+        }
+        .nav-tab:hover { background: var(--bg-hover); color: #fff; }
+        .nav-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+        .nav-tab span { font-size: 28px; }
+        .nav-tab .badge { position: absolute; top: 12px; right: 25px; background: #e41e3f; color: #fff; font-size: 10px; padding: 2px 5px; border-radius: 10px; }
+
+        /* NAV RIGHT */
+        .nav-right { display: flex; justify-content: flex-end; align-items: center; gap: 10px; padding-right: 20px; }
+        .nav-icon-btn {
+            width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.1);
+            display: flex; justify-content: center; align-items: center; color: #fff;
+            cursor: pointer; transition: 0.2s; position: relative; flex-shrink: 0;
+        }
+        .nav-icon-btn:hover { background: rgba(212, 175, 55, 0.2); color: var(--gold); }
+
+        /* --- 3. MAIN LAYOUT --- */
+        .main-container {
+            display: grid;
+            grid-template-columns: 280px 1fr 280px; 
+            height: calc(100vh - 60px); /* Restar navbar */
+            margin-top: 60px;
+            max-width: 1920px; margin-left: auto; margin-right: auto;
+            position: relative; z-index: 10;
+        }
+
+        /* SIDEBAR LEFT & PROFILE (FIX #4) */
+        .sidebar-left { 
+            background-color: var(--bg-sidebar); /* Fondo sólido para tapar partículas */
+            padding: 20px 15px; 
+            overflow-y: auto; 
+            display: flex; flex-direction: column; gap: 5px; 
+            border-right: 1px solid var(--border);
+        }
+        
+        .user-mini { 
+            display: flex; align-items: center; gap: 15px; 
+            margin-bottom: 20px; padding: 12px; 
+            background: rgba(255,255,255,0.03); /* Tarjeta sutil */
+            border-radius: 10px;
+            border: 1px solid transparent;
+            transition: 0.3s;
+        }
+        .user-mini:hover { border-color: rgba(212, 175, 55, 0.3); background: rgba(255,255,255,0.05); }
+
+        .user-avatar { 
+            width: 45px; height: 45px; 
+            border-radius: 50%; border: 2px solid var(--gold); 
+            object-fit: cover; flex-shrink: 0; 
+        }
+        .user-name { 
+            font-weight: bold; color: var(--gold); 
+            font-family: var(--font-serif); font-size: 0.95rem;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
+        }
+
+        .menu-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 15px; border-radius: 8px;
+            cursor: pointer; transition: 0.2s; color: var(--text-main); font-weight: 500;
+        }
+        .menu-item:hover { background: var(--bg-hover); color: var(--gold); transform: translateX(5px); }
+        .menu-icon { color: #888; font-size: 24px; transition: 0.2s; }
+        .menu-item:hover .menu-icon { color: var(--gold); }
+
+        /* FEED CENTER */
+        .feed-container {
+            padding: 20px 40px; overflow-y: auto;
+            display: flex; flex-direction: column; align-items: center; gap: 25px;
+        }
+
+        /* STORIES */
+        .stories-wrapper { display: flex; gap: 10px; width: 100%; max-width: 600px; overflow-x: auto; padding-bottom: 10px; flex-shrink: 0; }
+        .story-card {
+            min-width: 110px; height: 200px; border-radius: 12px;
+            background-color: #222; position: relative; overflow: hidden;
+            cursor: pointer; border: 1px solid var(--border); transition: 0.3s;
+            flex-shrink: 0;
+        }
+        .story-card:hover { transform: scale(1.03); border-color: var(--gold); box-shadow: 0 0 15px rgba(212, 175, 55, 0.3); }
+        .story-img { width: 100%; height: 100%; object-fit: cover; opacity: 0.8; transition: 0.3s; }
+        .story-card:hover .story-img { opacity: 1; transform: scale(1.1); }
+        .story-user { position: absolute; bottom: 8px; left: 8px; font-size: 0.8rem; font-weight: bold; text-shadow: 0 2px 4px #000; }
+        .story-avatar-small { position: absolute; top: 8px; left: 8px; width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--gold); background: #000; padding: 2px; }
+
+        /* CREATE POST */
+        .create-post {
+            width: 100%; max-width: 600px;
+            background: var(--bg-card); border-radius: 12px;
+            padding: 15px; border: 1px solid var(--border);
+            backdrop-filter: blur(10px);
+        }
+        .cp-top { display: flex; gap: 10px; padding-bottom: 15px; border-bottom: 1px solid var(--border); margin-bottom: 15px; }
+        .cp-input {
+            flex: 1; background: rgba(255,255,255,0.05); border-radius: 20px;
+            border: none; padding: 10px 15px; color: #aaa; font-family: var(--font-sans);
+            cursor: pointer; transition: 0.2s;
+        }
+        .cp-input:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .cp-actions { display: flex; justify-content: space-around; }
+        .cp-action { 
+            display: flex; align-items: center; gap: 8px; color: var(--text-sec); 
+            font-size: 0.9rem; cursor: pointer; padding: 8px 12px; border-radius: 8px;
+        }
+        .cp-action:hover { background: var(--bg-hover); color: #fff; }
+
+        /* POST CARD */
+        .post-card {
+            width: 100%; max-width: 600px;
+            background: var(--bg-card); border-radius: 12px;
+            border: 1px solid var(--border);
+            backdrop-filter: blur(10px); margin-bottom: 10px;
+        }
+        .post-header { padding: 15px; display: flex; align-items: center; gap: 10px; }
+        .post-avatar { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--gold); object-fit: cover; }
+        .post-info h4 { margin: 0; color: #fff; font-family: var(--font-serif); font-size: 1rem; }
+        .post-info span { font-size: 0.75rem; color: var(--text-sec); }
+        
+        .post-content { padding: 0 15px 15px 15px; font-size: 0.95rem; line-height: 1.5; color: #eee; }
+        .post-image { 
+            width: 100%; display: block; 
+            border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); 
+            max-height: 500px; object-fit: cover;
+        }
+        
+        .post-stats { padding: 10px 15px; display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-sec); border-bottom: 1px solid var(--border); }
+        
+        .post-actions { padding: 5px 10px; display: flex; justify-content: space-between; }
+        .action-btn {
+            flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;
+            padding: 10px; border-radius: 6px; cursor: pointer; color: var(--text-sec);
+            font-weight: 500; font-size: 0.9rem; transition: 0.2s;
+        }
+        .action-btn:hover { background: var(--bg-hover); color: var(--gold); }
+        .action-btn.active { color: var(--gold); }
+
+        /* COMMENTS */
+        .comments-section { display: none; padding: 15px; background: rgba(0,0,0,0.3); border-top: 1px solid var(--border); }
+        .comments-section.open { display: block; animation: fadeIn 0.3s; }
+        .comment { display: flex; gap: 10px; margin-bottom: 10px; }
+        .comment-avatar { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; }
+        .comment-bubble { background: rgba(255,255,255,0.08); padding: 8px 12px; border-radius: 15px; font-size: 0.85rem; }
+        .comment-user { font-weight: bold; color: var(--gold); font-size: 0.8rem; display: block; margin-bottom: 2px; }
+        .comment-input-wrap { display: flex; gap: 10px; margin-top: 10px; align-items: center; }
+        .comment-input { flex: 1; background: #333; border: none; padding: 8px 12px; border-radius: 20px; color: #fff; font-family: var(--font-sans); }
+
+        /* SIDEBAR RIGHT */
+        .sidebar-right { 
+            padding: 20px 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; 
+            border-left: 1px solid var(--border);
+            background-color: var(--bg-sidebar); /* Fondo sólido */
+        }
+        .section-title { font-size: 0.9rem; color: var(--text-sec); margin: 20px 10px 10px 10px; font-family: var(--font-serif); border-bottom: 1px solid var(--border); padding-bottom: 5px; letter-spacing: 0.1em; }
+        
+        .contact { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .contact:hover { background: var(--bg-hover); }
+        .contact-img { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); object-fit: cover; }
+        .contact-name { font-size: 0.9rem; color: #e4e6eb; }
+        .online-dot { width: 8px; height: 8px; background: #31a24c; border-radius: 50%; }
+
+        /* NOTIFICATIONS DROPDOWN */
+        .dropdown-panel {
+            position: absolute; top: 60px; right: 10px; width: 320px;
+            background: rgba(20, 20, 20, 0.95); border: 1px solid var(--border);
+            border-radius: 10px; padding: 10px; display: none;
+            flex-direction: column; gap: 5px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            transform-origin: top right; animation: scaleIn 0.2s var(--ease-out); z-index: 600;
+        }
+        .dropdown-panel.show { display: flex; }
+        .notif-item { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .notif-item:hover { background: var(--bg-hover); }
+        .notif-icon { width: 40px; height: 40px; border-radius: 50%; background: var(--gold); display: flex; justify-content: center; align-items: center; color: #000; flex-shrink: 0; }
+        .notif-text { font-size: 0.85rem; color: #ddd; }
+        .notif-time { font-size: 0.7rem; color: #888; }
+
+        /* MODALS & OVERLAYS */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 2000;
+            display: none; align-items: center; justify-content: center;
+            backdrop-filter: blur(10px); opacity: 0; transition: opacity 0.3s;
+        }
+        .modal-overlay.open { display: flex; opacity: 1; }
+        .modal-content {
+            background: #181818; border: 1px solid var(--gold); border-radius: 15px;
+            width: 500px; padding: 25px; position: relative;
+            box-shadow: 0 0 30px rgba(212, 175, 55, 0.2); transform: scale(0.9); transition: transform 0.3s;
+        }
+        .modal-overlay.open .modal-content { transform: scale(1); }
+        .modal-textarea { width: 100%; height: 100px; background: #222; border: 1px solid #444; color: #fff; padding: 10px; border-radius: 8px; margin-top: 15px; resize: none; font-family: var(--font-sans); }
+        .modal-btn { width: 100%; padding: 10px; background: var(--gold); color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 15px; text-transform: uppercase; }
+
+        /* MINI CHAT */
+        .mini-chat {
+            position: fixed; bottom: 0; right: 80px; width: 320px; height: 400px;
+            background: #181818; border: 1px solid var(--border); border-top-left-radius: 10px; border-top-right-radius: 10px;
+            z-index: 1000; display: flex; flex-direction: column; transform: translateY(100%); transition: transform 0.3s;
+            box-shadow: 0 -5px 30px rgba(0,0,0,0.5);
+        }
+        .mini-chat.open { transform: translateY(0); }
+        .mc-header { padding: 10px 15px; background: #222; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; border-radius: 10px 10px 0 0; cursor: pointer; }
+        .mc-body { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .mc-input { flex: 1; background: #333; border: none; border-radius: 15px; padding: 5px 10px; color: #fff; font-family: var(--font-sans); }
+
+        /* TOAST */
+        .toast {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px);
+            background: rgba(212, 175, 55, 0.9); color: #000;
+            padding: 12px 25px; border-radius: 30px; font-weight: bold;
+            z-index: 3000; transition: 0.4s var(--ease-out); opacity: 0; pointer-events: none;
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+        /* CURSOR */
+        .cursor-dot { position: fixed; width: 8px; height: 8px; background: var(--gold); border-radius: 50%; pointer-events: none; z-index: 9999; transform: translate(-50%, -50%); box-shadow: 0 0 10px var(--gold); }
+        .cursor-circle { position: fixed; width: 40px; height: 40px; border: 1px solid rgba(212, 175, 55, 0.6); border-radius: 50%; pointer-events: none; z-index: 9998; transform: translate(-50%, -50%); transition: width 0.3s, height 0.3s, background 0.3s, border-color 0.3s; }
+
+        @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+        @keyframes pulseRed { 0%{opacity:1;} 50%{opacity:0.5;} 100%{opacity:1;} }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes scaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        @media (max-width: 1100px) { .main-container { grid-template-columns: 80px 1fr 250px; } .menu-item span, .user-name { display: none; } }
+        @media (max-width: 900px) { 
+            .main-container { grid-template-columns: 1fr; } 
+            .sidebar-left, .sidebar-right { display: none; } 
+            .nav-center { display: none; }
+            .back-link { display: none; } 
+        }
+    </style>
+</head>
+<body>
+
+    <!-- FONDO NEURAL (CANVAS 2D) -->
+    <canvas id="neural-canvas"></canvas>
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <div class="nav-left">
+            <img src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/imagenes/Logo.png" class="logo-img">
+            <div class="back-link" onclick="goToHome()">
+                <span class="material-symbols-rounded">arrow_back</span>
+                VOLVIENDO AL ORIGEN
+            </div>
+        </div>
+        
+        <div class="nav-center">
+            <div class="nav-tab active" onclick="showToast('Inicio')"><span class="material-symbols-rounded">home</span></div>
+            <div class="nav-tab" onclick="showToast('Video')"><span class="material-symbols-rounded">smart_display</span><span class="badge">3</span></div>
+            <div class="nav-tab" onclick="showToast('Comunidad')"><span class="material-symbols-rounded">groups</span></div>
+            <div class="nav-tab" onclick="showToast('Mercado')"><span class="material-symbols-rounded">storefront</span></div>
+        </div>
+        
+        <div class="nav-right">
+            <div class="nav-icon-btn" onclick="openMenu()"><span class="material-symbols-rounded">apps</span></div>
+            <div class="nav-icon-btn" onclick="toggleChat()"><span class="material-symbols-rounded">chat</span></div>
+            <div class="nav-icon-btn" onclick="toggleNotif()"><span class="material-symbols-rounded">notifications</span></div>
+            <div class="nav-icon-btn" onclick="showToast('Perfil de Usuario')">
+                <img src="https://i.pravatar.cc/150?img=11" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">
+            </div>
+            
+            <!-- DROPDOWN NOTIFICACIONES -->
+            <div class="dropdown-panel" id="notifPanel">
+                <div style="padding:10px; font-weight:bold; color:var(--gold);">Ecos Recientes</div>
+                <div class="notif-item">
+                    <div class="notif-icon"><span class="material-symbols-rounded">favorite</span></div>
+                    <div><div class="notif-text">A <strong>Guía Ancestral</strong> le resonó tu publicación.</div><div class="notif-time">Hace 5 min</div></div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- LAYOUT PRINCIPAL -->
+    <div class="main-container">
+        
+        <!-- SIDEBAR LEFT -->
+        <aside class="sidebar-left">
+            <div class="user-mini">
+                <img src="https://i.pravatar.cc/150?img=11" class="user-avatar">
+                <span class="user-name">Viajero del Nexo</span>
+            </div>
+            <div class="menu-item" onclick="showToast('Amigos')"><span class="material-symbols-rounded menu-icon">group</span> <span>Amigos</span></div>
+            <div class="menu-item" onclick="showToast('Memorias')"><span class="material-symbols-rounded menu-icon">schedule</span> <span>Memorias</span></div>
+            <div class="menu-item" onclick="showToast('Guardado')"><span class="material-symbols-rounded menu-icon">bookmark</span> <span>Guardado</span></div>
+            <div class="menu-item" onclick="showToast('Comunidades')"><span class="material-symbols-rounded menu-icon">groups</span> <span>Comunidades</span></div>
+            <div class="menu-item" onclick="showToast('Transmisiones')"><span class="material-symbols-rounded menu-icon">smart_display</span> <span>Transmisiones</span></div>
+            <div style="border-top: 1px solid var(--border); margin: 10px 0;"></div>
+            <div class="menu-item" onclick="showToast('Configuración')"><span class="material-symbols-rounded menu-icon">settings</span> <span>Ajustes</span></div>
+        </aside>
+
+        <!-- FEED CENTER -->
+        <div class="feed-container">
+            
+            <!-- Stories -->
+            <div class="stories-wrapper">
+                <div class="story-card" onclick="openModal('create-post')">
+                    <div style="width:100%; height:100%; background:#333; display:flex; align-items:center; justify-content:center; color:#666;">
+                        <span class="material-symbols-rounded" style="font-size:40px;">add_circle</span>
+                    </div>
+                    <div class="story-user">Crear Historia</div>
+                </div>
+                <div class="story-card">
+                    <img src="https://images.unsplash.com/photo-1614728853913-1e32005e3078?w=400" class="story-img">
+                    <div class="story-avatar-small"><img src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/imagenes/Logo.png" style="width:100%; height:100%; border-radius:50%;"></div>
+                    <div class="story-user">Ululato</div>
+                </div>
+                <div class="story-card">
+                    <img src="https://images.unsplash.com/photo-1518544806352-a228605200bd?w=400" class="story-img">
+                    <div class="story-avatar-small"><img src="https://i.pravatar.cc/100?img=5" style="width:100%; height:100%; border-radius:50%;"></div>
+                    <div class="story-user">Lina M.</div>
+                </div>
+            </div>
+
+            <!-- Create Post -->
+            <div class="create-post">
+                <div class="cp-top">
+                    <img src="https://i.pravatar.cc/150?img=11" class="user-avatar" style="width:40px; height:40px; border:none;">
+                    <div class="cp-input" onclick="openModal('create-post')">¿Qué estás tejiendo hoy?</div>
+                </div>
+                <div class="cp-actions">
+                    <div class="cp-action" onclick="openModal('live')"><span class="material-symbols-rounded" style="color:#f3425f">videocam</span> Directo</div>
+                    <div class="cp-action" onclick="showToast('Galería')"><span class="material-symbols-rounded" style="color:#45bd62">photo_library</span> Foto/Video</div>
+                    <div class="cp-action" onclick="showToast('Sentimiento')"><span class="material-symbols-rounded" style="color:#f7b928">sentiment_satisfied</span> Sentimiento</div>
+                </div>
+            </div>
+
+            <!-- POST 1: LANZAMIENTO -->
+            <article class="post-card">
+                <div class="post-header">
+                    <img src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/imagenes/Logo.png" class="post-avatar">
+                    <div class="post-info">
+                        <h4>Ululato Oficial <span class="material-symbols-rounded" style="font-size:14px; color:var(--gold); vertical-align:middle;">verified</span></h4>
+                        <span>Hace 2 horas · <span class="material-symbols-rounded" style="font-size:12px;">public</span></span>
+                    </div>
+                    <span class="material-symbols-rounded post-more">more_horiz</span>
+                </div>
+                <div class="post-content">
+                    La red no es solo digital; es espiritual. Hoy lanzamos nuestra nueva interfaz de conexión cuántica. ¿Ya sentiste la vibración? #Origen #Futuro
+                </div>
+                <img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1000&auto=format&fit=crop" class="post-image">
+                <div class="post-stats"><span>1.2k resonancias</span><span>45 comentarios</span></div>
+                <div class="post-actions">
+                    <div class="action-btn" onclick="toggleLike(this)"><span class="material-symbols-rounded">thumb_up</span> Resonar</div>
+                    <div class="action-btn" onclick="toggleComments(this)"><span class="material-symbols-rounded">chat_bubble</span> Tejer</div>
+                    <div class="action-btn" onclick="showToast('Enlace copiado')"><span class="material-symbols-rounded">share</span> Expandir</div>
+                </div>
+                <div class="comments-section">
+                    <div class="comment">
+                        <img src="https://i.pravatar.cc/150?img=32" class="comment-avatar">
+                        <div class="comment-bubble">
+                            <span class="comment-user">Elena S.</span>
+                            ¡Impresionante actualización! La fluidez es increíble.
+                        </div>
+                    </div>
+                    <div class="comment-input-wrap">
+                        <img src="https://i.pravatar.cc/150?img=11" class="user-avatar" style="width:30px; height:30px; border:none;">
+                        <input type="text" class="comment-input" placeholder="Escribe un comentario..." onkeypress="if(event.key==='Enter') showToast('Comentario añadido')">
+                    </div>
+                </div>
+            </article>
+
+            <!-- POST 2: ARTEFACTO -->
+            <article class="post-card">
+                <div class="post-header">
+                    <img src="https://i.pravatar.cc/150?img=60" class="post-avatar">
+                    <div class="post-info">
+                        <h4>Arqueólogo Digital</h4>
+                        <span>Ayer a las 18:20 · <span class="material-symbols-rounded" style="font-size:12px;">group</span></span>
+                    </div>
+                </div>
+                <div class="post-content">
+                    Hemos recuperado este fragmento de código de los servidores antiguos. Parece un mapa estelar encriptado en binario. ¿Alguien reconoce este patrón? 🧩
+                </div>
+                <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=1000&auto=format&fit=crop" class="post-image">
+                <div class="post-stats"><span>890 resonancias</span><span>120 teorías</span></div>
+                <div class="post-actions">
+                    <div class="action-btn" onclick="toggleLike(this)"><span class="material-symbols-rounded">thumb_up</span> Resonar</div>
+                    <div class="action-btn" onclick="toggleComments(this)"><span class="material-symbols-rounded">chat_bubble</span> Tejer</div>
+                    <div class="action-btn"><span class="material-symbols-rounded">share</span> Expandir</div>
+                </div>
+            </article>
+
+            <!-- POST 3: MEDITACIÓN -->
+            <article class="post-card">
+                <div class="post-header">
+                    <img src="https://i.pravatar.cc/150?img=44" class="post-avatar">
+                    <div class="post-info">
+                        <h4>Santuario Virtual</h4>
+                        <span>Hace 5 horas · <span class="material-symbols-rounded" style="font-size:12px;">public</span></span>
+                    </div>
+                </div>
+                <div class="post-content">
+                    Sincronización global en 30 minutos. Conecten sus interfaces neuronales y respiren. El silencio también es datos. 🧘‍♂️✨
+                </div>
+                <img src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?q=80&w=1000&auto=format&fit=crop" class="post-image">
+                <div class="post-stats"><span>2.5k resonancias</span><span>En vivo</span></div>
+                <div class="post-actions">
+                    <div class="action-btn" onclick="toggleLike(this)"><span class="material-symbols-rounded">thumb_up</span> Resonar</div>
+                    <div class="action-btn" onclick="toggleComments(this)"><span class="material-symbols-rounded">chat_bubble</span> Tejer</div>
+                    <div class="action-btn"><span class="material-symbols-rounded">share</span> Expandir</div>
+                </div>
+            </article>
+
+        </div>
+
+        <!-- SIDEBAR RIGHT -->
+        <aside class="sidebar-right">
+            <h4 class="section-title">CONTACTOS</h4>
+            <div class="contact" onclick="toggleChat()">
+                <div style="position:relative;">
+                    <img src="https://i.pravatar.cc/150?img=68" class="contact-img">
+                    <div class="online-dot" style="position:absolute; bottom:0; right:0; border:2px solid #000;"></div>
+                </div>
+                <span class="contact-name">Guía Ancestral</span>
+            </div>
+            <div class="contact" onclick="toggleChat()">
+                <div style="position:relative;">
+                    <img src="https://i.pravatar.cc/150?img=59" class="contact-img">
+                    <div class="online-dot" style="position:absolute; bottom:0; right:0; border:2px solid #000;"></div>
+                </div>
+                <span class="contact-name">Soporte Técnico</span>
+            </div>
+            <div class="contact">
+                <div style="position:relative;">
+                    <img src="https://i.pravatar.cc/150?img=12" class="contact-img">
+                    <div class="online-dot" style="position:absolute; bottom:0; right:0; border:2px solid #000; background:gray;"></div>
+                </div>
+                <span class="contact-name">Dev_One</span>
+            </div>
+        </aside>
+    </div>
+
+    <!-- MODAL CREAR POST -->
+    <div class="modal-overlay" id="modalPost">
+        <div class="modal-content">
+            <span class="material-symbols-rounded" style="position:absolute; top:15px; right:15px; cursor:pointer; color:#888;" onclick="closeModal('modalPost')">close</span>
+            <div style="color:var(--gold); font-family:var(--font-serif); font-size:1.2rem; margin-bottom:15px; text-align:center;">CREAR TEJIDO</div>
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:15px;">
+                <img src="https://i.pravatar.cc/150?img=11" class="user-avatar" style="width:40px; height:40px;">
+                <div style="font-weight:bold; color:#fff;">Viajero del Nexo</div>
+            </div>
+            <textarea class="modal-textarea" placeholder="¿Qué deseas manifestar en la red?"></textarea>
+            <button class="modal-btn" onclick="closeModal('modalPost'); showToast('Publicación creada')">PUBLICAR</button>
+        </div>
+    </div>
+
+    <!-- LIVE MODAL -->
+    <div class="modal-overlay" id="modalLive" style="background:black;">
+        <div class="modal-content" style="background:transparent; border:none; box-shadow:none; text-align:center; display:flex; flex-direction:column; align-items:center;">
+            <div style="background:#e41e3f; color:#fff; padding:5px 10px; border-radius:5px; font-weight:bold; margin-bottom:20px; animation:pulseRed 1.5s infinite;">EN VIVO</div>
+            <img src="https://i.pravatar.cc/150?img=11" style="width:100px; height:100px; border-radius:50%; border:3px solid var(--gold); animation:spin 10s linear infinite;">
+            <h2 style="color:#fff; margin-top:20px;">Iniciando transmisión cuántica...</h2>
+            <button class="modal-btn" style="background:#ff3b30; margin-top:30px; width:auto; padding:10px 30px;" onclick="closeModal('modalLive')">DETENER</button>
+        </div>
+    </div>
+
+    <!-- MINI CHAT -->
+    <div class="mini-chat" id="miniChat">
+        <div class="mc-header" onclick="toggleChat()">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <img src="https://i.pravatar.cc/150?img=68" style="width:30px; height:30px; border-radius:50%;">
+                <span style="font-weight:bold; color:var(--gold);">Guía Ancestral</span>
+            </div>
+            <span class="material-symbols-rounded">close</span>
+        </div>
+        <div class="mc-body">
+            <div style="align-self:flex-start; background:#333; padding:8px 12px; border-radius:10px; font-size:0.9rem;">Hola, ¿cómo va tu proceso?</div>
+            <div style="align-self:flex-end; background:var(--gold-dim); color:var(--gold); padding:8px 12px; border-radius:10px; font-size:0.9rem;">Todo fluye correctamente.</div>
+        </div>
+        <div class="mc-footer">
+            <input type="text" class="mc-input" placeholder="Aa" onkeypress="if(event.key==='Enter') showToast('Mensaje enviado')">
+            <span class="material-symbols-rounded" style="color:var(--gold); cursor:pointer;">send</span>
+        </div>
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast" id="toastMsg">Acción realizada</div>
+
+    <!-- CURSOR -->
+    <div class="cursor-dot"></div>
+    <div class="cursor-circle"></div>
+
+    <script>
+        // --- 0. TRANSICIÓN A HOME ---
+        function goToHome() {
+            document.body.classList.add('fade-out');
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 800);
+        }
+
+        // --- 1. NEURAL BACKGROUND (2D CANVAS) ---
+        const canvas = document.getElementById('neural-canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height, nodes = [], mouse = {x:-1000, y:-1000};
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+
+        class Node {
+            constructor() {
+                this.x = Math.random() * width; this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 0.5; this.vy = (Math.random() - 0.5) * 0.5;
+                this.size = Math.random() * 2 + 1;
+                this.color = Math.random() > 0.7 ? 'rgba(212, 175, 55,' : 'rgba(255, 255, 255,'; 
+            }
+            update() {
+                this.x += this.vx; this.y += this.vy;
+                if(this.x < 0 || this.x > width) this.vx *= -1;
+                if(this.y < 0 || this.y > height) this.vy *= -1;
+            }
+            draw() {
+                let dist = Math.sqrt((mouse.x-this.x)**2 + (mouse.y-this.y)**2);
+                if(dist < 250) {
+                    ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
+                    ctx.fillStyle = this.color + (1-dist/250) + ')'; ctx.fill();
+                    nodes.forEach(n2 => {
+                        let d2 = Math.sqrt((this.x-n2.x)**2 + (this.y-n2.y)**2);
+                        if(d2 < 120) {
+                            ctx.beginPath(); ctx.moveTo(this.x, this.y); ctx.lineTo(n2.x, n2.y);
+                            ctx.strokeStyle = `rgba(212, 175, 55, ${(1-dist/250)*0.2 * (1-d2/120)})`;
+                            ctx.stroke();
+                        }
+                    });
+                }
+            }
+        }
+
+        for(let i=0; i<150; i++) nodes.push(new Node());
+
+        function animate() {
+            ctx.clearRect(0,0,width,height);
+            nodes.forEach(n => { n.update(); n.draw(); });
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        // --- 2. UI LOGIC ---
+        function toggleLike(btn) {
+            btn.classList.toggle('active');
+            btn.style.color = btn.classList.contains('active') ? 'var(--gold)' : 'var(--text-sec)';
+        }
+        function toggleComments(btn) {
+            const card = btn.closest('.post-card');
+            const section = card.querySelector('.comments-section');
+            section.classList.toggle('open');
+        }
+        function openModal(id) { document.getElementById(id === 'live' ? 'modalLive' : 'modalPost').classList.add('open'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+        function toggleChat() { document.getElementById('miniChat').classList.toggle('open'); }
+        function toggleNotif() { document.getElementById('notifPanel').classList.toggle('show'); }
+        
+        function showToast(msg) {
+            const t = document.getElementById('toastMsg');
+            t.innerText = msg; t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        // Close Dropdowns on Click Outside
+        document.addEventListener('click', (e) => {
+            if(!e.target.closest('.nav-right')) document.getElementById('notifPanel').classList.remove('show');
+        });
+
+        // --- 3. CURSOR ---
+        const dot = document.querySelector('.cursor-dot');
+        const circle = document.querySelector('.cursor-circle');
+        let cx = 0, cy = 0;
+
+        window.addEventListener('mousemove', e => { 
+            dot.style.left = e.clientX + 'px'; dot.style.top = e.clientY + 'px'; 
+            const hover = e.target.closest('a, .post-card, .story-card, .menu-item, .nav-icon-btn, .nav-tab, .back-floating, .action-btn, .contact, .cp-input, button');
+            if(hover) {
+                circle.style.width = '60px'; circle.style.height = '60px';
+                circle.style.backgroundColor = 'rgba(212, 175, 55, 0.1)';
+                circle.style.borderColor = 'var(--gold)';
+            } else {
+                circle.style.width = '48px'; circle.style.height = '48px';
+                circle.style.backgroundColor = 'transparent';
+                circle.style.borderColor = 'rgba(212, 175, 55, 0.6)';
+            }
+        });
+
+        function animateCursor() {
+            cx += (mouse.x - cx) * 0.15;
+            cy += (mouse.y - cy) * 0.15;
+            circle.style.left = cx + 'px'; circle.style.top = cy + 'px';
+            requestAnimationFrame(animateCursor);
+        }
+        animateCursor();
+
+    </script>
+</body>
+</html>
