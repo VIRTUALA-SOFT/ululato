@@ -1234,39 +1234,40 @@
 
 
     // ==========================================
-    // 6. OBSERVER
+    // 6. OBSERVER (SOLO PARA PAUSAR/REANUDAR)
     // ==========================================
     const sectionObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 isSceneActive = true;
                 
+                // Solo nos importa si el usuario REGRESA a la sección
                 if (hasIntroFinished) {
                     console.log("Hero: Regreso del usuario.");
                     
+                    // Reanudar animaciones visuales
+                    if(!neuralAnimId) animateNeural();                    
+                    
                     // Asegurar video play en silencio al regresar
                     if(video && video.paused) {
-                        video.muted = true; // Forzar mute para garantizar play
+                        video.muted = true; 
                         video.play().catch(()=>{});
                     }
                     
-                    animateNeural();
+                    // Asegurar que la UI de carga esté oculta
                     if(preloader) preloader.style.display = 'none';
                     if(starContainer) starContainer.style.display = 'none';
-
-                } else {
-                    console.log("Hero: Primera carga.");
-                    if (loadProgress < 100 && !loadAnimId) {
-                        animateStars();
-                        simLoad(); 
-                    }
                 }
+                // NOTA: ¡Aquí quitamos el bloque "else { simLoad... }" para que no dependa del scroll!
+                
             } else {
+                // El usuario hizo scroll y se fue: Pausar todo
                 isSceneActive = false;
                 cancelAnimationFrame(starAnimId);
-                cancelAnimationFrame(tunnelAnimId);
+                // No cancelamos tunnelAnimId aquí porque ese se maneja solo al terminar
                 cancelAnimationFrame(neuralAnimId);
-                cancelAnimationFrame(loadAnimId);
+                // No cancelamos loadAnimId porque la carga debe terminar sí o sí
+                
                 if(video && !video.paused) video.pause();
             }
         });
@@ -1274,6 +1275,17 @@
 
     const target = document.getElementById(containerId);
     if(target) sectionObserver.observe(target);
+
+    // ==========================================
+    // 7. ARRANQUE INCONDICIONAL (SOLUCIÓN FINAL)
+    // ==========================================
+    // Esto va FUERA del observer para que arranque SIEMPRE al abrir la página
+    
+    // 1. Iniciar estrellas
+    requestAnimationFrame(animateStars);
+    
+    // 2. Iniciar barra de carga (Esto arregla el 0% pegado)
+    requestAnimationFrame(simLoad);
 
 } // CIERRE BLOQUE
 </script>
