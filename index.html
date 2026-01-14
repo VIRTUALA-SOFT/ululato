@@ -964,8 +964,8 @@
         }
 
         window.addEventListener('resize', initStars);
-        initStars();
-        animateStars();
+      //  initStars();
+      //  animateStars();
 
         // LOGICA DE CARGA & INICIO DE FUSIÓN
         const loadText = document.getElementById('loadText');
@@ -986,9 +986,9 @@
                 initTunnelAnimation(); 
 
             } else {
-                loadText.innerText = Math.floor(loadProgress) + '%';
-                loadWrap.style.width = Math.min(loadProgress * 3, 250) + 'px'; 
-                loadFill.style.width = loadProgress + '%';
+               // loadText.innerText = Math.floor(loadProgress) + '%';
+              //  loadWrap.style.width = Math.min(loadProgress * 3, 250) + 'px'; 
+              //  loadFill.style.width = loadProgress + '%';
                 requestAnimationFrame(simLoad);
             }
         }
@@ -1240,7 +1240,7 @@
                 } else {
                     console.log("Hero: Primera carga.");
                     if (loadProgress < 100 && !loadAnimId) {
-                        animateStars();
+                       // animateStars();
                         simLoad(); 
                     }
                 }
