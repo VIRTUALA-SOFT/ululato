@@ -127,7 +127,7 @@
         .menu-atmosphere { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; opacity: 0; background: radial-gradient(circle at center, var(--active-color, transparent) 0%, transparent 60%); mix-blend-mode: hard-light; transition: opacity 0.6s ease; pointer-events: none; }
         .menu-list { list-style: none; padding: 0; }
         .menu-item { margin: 15px 0; overflow: visible; }
-        .menu-link { text-decoration: none; display: flex; align-items: center; gap: 20px; font-family: var(--font-serif); font-size: clamp(1.8rem, 4vw, 3.5rem); color: rgba(255,255,255,0.65); text-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: 0.4s; transform: translateY(100%); }
+        .menu-link { text-decoration: none; display: flex; align-items: center; gap: 15px; font-family: var(--font-serif); font-size: clamp(1.2rem, 5vw, 3.5rem); color: rgba(255,255,255,0.65); text-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: 0.4s; transform: translateY(100%); }
         .menu-link:hover { color: #fff; transform: translateX(20px); }
         .menu-curtain.active .menu-link { transform: translateY(0); }
         .menu-curtain.active .menu-item:nth-child(1) .menu-link { transition-delay: 0.1s; }
@@ -185,23 +185,23 @@
         .cursor-circle { position: fixed; top: 0; left: 0; width: 48px; height: 48px; border: 1px solid rgba(212, 175, 55, 0.6); border-radius: 50%; pointer-events: none; z-index: 99999; transform: translate(-50%, -50%); transition: width 0.3s, height 0.3s, background 0.3s, border-color 0.3s; will-change: transform; }
 
         @media (max-width: 768px) {
-            .nav-bar { padding: 30px; }
+            .nav-bar { padding: 20px; }
             .hero-title { font-size: 9vw; }
             .scroll-indicator { display: none; }
             .audio-toggle { bottom: 30px; right: 30px; }
             .menu-curtain {
-                justify-content: flex-start; /* Alinear arriba en lugar de centro */
-                padding-top: 120px; /* Espacio para no tapar el botón cerrar */
+                justify-content: center; 
+                padding-top: 80px 0; /* Espacio para no tapar el botón cerrar */
                 overflow-y: auto; /* Permitir scroll si la pantalla es muy pequeña */
             }
            .menu-item { 
-               margin: 10px 0; /* Menos separación vertical */
+               margin: 8px 0; /* Menos separación vertical */
            }
              /* Hacer los números y anillos más pequeños */
-            .nav-number-wrap { width: 30px; height: 30px; }
-            .number-ring-svg { width: 40px; height: 40px; top: -5px; left: -5px; }
-            .nav-number { font-size: 0.7rem; }
-            .menu-link { gap: 15px; }
+            .nav-number-wrap { width: 25px; height: 25px; }
+            .number-ring-svg { width: 35px; height: 35px; top: -5px; left: -5px; }
+            .nav-number { font-size: 0.6rem; }
+            .menu-link { gap: 10px; }
             
           }
 
@@ -829,349 +829,248 @@
         // ===========================================================================================================================================================
 { // BLOQUE DE AISLAMIENTO SCENE 1
 
-    // --- 0. CURSOR PERSONALIZADO & MOUSE TRACKER ---
-    // Definimos mouse globalmente para este bloque para compartirlo con Neural Veil y Cursor
+    // --- 0. VARIABLES GLOBALES DEL BLOQUE ---
     let mouse = { x: window.innerWidth/2, y: window.innerHeight/2 }; 
+    const containerId = 'scene-material'; 
+    let isSceneActive = true; 
+    let hasIntroFinished = false; 
+    let neuralAnimId, starAnimId;   
+    const video = document.getElementById('bg-video');
+    const starCanvas = document.getElementById('loader-canvas');
+    const sCtx = starCanvas.getContext('2d');
+    const starContainer = document.getElementById('loader-canvas-container');
+    const preloader = document.getElementById('preloader');
     
+    // --- 1. CURSOR ---
     const dot = document.querySelector('.cursor-dot');
     const circle = document.querySelector('.cursor-circle');
     let cx = 0, cy = 0;
 
     if(dot && circle) {
         window.addEventListener('mousemove', e => { 
-            // 1. Actualizar coordenadas compartidas
-            mouse.x = e.clientX; 
-            mouse.y = e.clientY;
-
-            // 2. Mover el punto central (dot) instantáneamente
-            dot.style.left = e.clientX + 'px'; 
-            dot.style.top = e.clientY + 'px'; 
-            
-            // 3. Detectar elementos interactivos para el efecto hover del círculo
+            mouse.x = e.clientX; mouse.y = e.clientY;
+            dot.style.left = e.clientX + 'px'; dot.style.top = e.clientY + 'px'; 
             const c = e.target.closest('a, button, .menu-trigger, .interaction-zone, .menu-label'); 
             if(c) { 
-                circle.style.width = '60px'; 
-                circle.style.height = '60px'; 
-                circle.style.backgroundColor = 'rgba(212, 175, 55, 0.1)'; 
-                circle.style.borderColor = 'var(--gold)'; 
+                circle.style.width = '60px'; circle.style.height = '60px'; 
+                circle.style.backgroundColor = 'rgba(212, 175, 55, 0.1)'; circle.style.borderColor = 'var(--gold)'; 
             } else { 
-                circle.style.width = '40px'; 
-                circle.style.height = '40px'; 
-                circle.style.backgroundColor = 'transparent'; 
-                circle.style.borderColor = 'rgba(212, 175, 55, 0.6)'; 
+                circle.style.width = '40px'; circle.style.height = '40px'; 
+                circle.style.backgroundColor = 'transparent'; circle.style.borderColor = 'rgba(212, 175, 55, 0.6)'; 
             } 
         });
-
-        // 4. Loop de animación suave para el círculo (retraso/lag)
         function ac() { 
-            cx += (mouse.x - cx) * 0.15; 
-            cy += (mouse.y - cy) * 0.15; 
-            circle.style.left = cx + 'px'; 
-            circle.style.top = cy + 'px'; 
+            cx += (mouse.x - cx) * 0.15; cy += (mouse.y - cy) * 0.15; 
+            circle.style.left = cx + 'px'; circle.style.top = cy + 'px'; 
             requestAnimationFrame(ac); 
         } 
         ac();
     }
 
-    const containerId = 'scene-material'; 
-    let isSceneActive = true; 
-    let hasIntroFinished = false; 
-    
-    let neuralAnimId, tunnelAnimId, loadAnimId;   
-  
-    const video = document.getElementById('bg-video');
+    // --- CARGA DINÁMICA VIDEO ---
+    if (video && video.dataset.src && !video.src) { video.src = video.dataset.src; video.load(); }
 
-    // --- CARGA DINÁMICA DEL VIDEO ---
-    if (video && video.dataset.src && !video.src) {
-        video.src = video.dataset.src;
-        video.load(); 
-    }
-
-    // --- LÓGICA DEL MENÚ (Agregada) ---
+    // --- MENÚ ---
     const menuBtn = document.getElementById('openMenu');
     const closeBtn = document.getElementById('closeMenu');
     const menuCurtain = document.getElementById('menuCurtain');
+    if(menuBtn && menuCurtain) menuBtn.addEventListener('click', () => menuCurtain.classList.add('active'));
+    if(closeBtn && menuCurtain) closeBtn.addEventListener('click', () => menuCurtain.classList.remove('active'));
 
-    if(menuBtn && menuCurtain) {
-        menuBtn.addEventListener('click', () => {
-            menuCurtain.classList.add('active');
-        });
-    }
-    if(closeBtn && menuCurtain) {
-        closeBtn.addEventListener('click', () => {
-            menuCurtain.classList.remove('active');
-        });
-    }
-
-    // --- LÓGICA DE HOVER DEL MENÚ (ATMÓSFERA DE COLOR) ---
     const menuLinks = document.querySelectorAll('.menu-link');
     const menuAtmosphere = document.getElementById('menuAtmosphere');
-
     menuLinks.forEach(link => {
         link.addEventListener('mouseenter', () => {
             const color = link.getAttribute('data-color');
-            if (menuAtmosphere && color) {
-                menuAtmosphere.style.setProperty('--active-color', color);
-                menuAtmosphere.style.opacity = '1';
-            }
+            if (menuAtmosphere && color) { menuAtmosphere.style.setProperty('--active-color', color); menuAtmosphere.style.opacity = '1'; }
         });
-        link.addEventListener('mouseleave', () => {
-            if (menuAtmosphere) {
-                menuAtmosphere.style.opacity = '0';
-            }
-        });
+        link.addEventListener('mouseleave', () => { if (menuAtmosphere) menuAtmosphere.style.opacity = '0'; });
     });
 
-       // ==========================================
-        // 1. ESTRELLAS: 2D Canvas (CONTINUIDAD FLUIDA)
-        // ==========================================
+    // ==========================================
+    // 2. ESTRELLAS (CANVAS)
+    // ==========================================
+    let width, height, stars = [], loadProgress = 0, isWarping = false;
     
-        const starCanvas = document.getElementById('loader-canvas');
-        const sCtx = starCanvas.getContext('2d');
-        const starContainer = document.getElementById('loader-canvas-container');
-        let width, height, stars = [], loadProgress = 0, isWarping = false;
-        
-        function initStars() {
-            width = starCanvas.width = window.innerWidth; 
-            height = starCanvas.height = window.innerHeight;
-            stars = [];
-            for(let i=0; i<400; i++) {
-                stars.push({
-                    x: Math.random() * width - width / 2,
-                    y: Math.random() * height - height / 2,
-                    z: Math.random() * width,
-                    color: Math.random() > 0.5 ? '#D4AF37' : '#00F0FF',
-                    size: Math.random() * 2
-                });
-            }
-        }
-        
-        let starAnimId;
-        function animateStars() {
-            // Fondo ligeramente transparente en Warp para crear estelas, pero siempre base negra
-            sCtx.fillStyle = isWarping ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 1)'; 
-            sCtx.fillRect(0, 0, width, height);
-            
-            stars.forEach(s => {
-                let speed = 2 + (loadProgress * 2.0);
-                if(isWarping) speed = 80; // Aceleración suave
-                
-                s.z -= speed;
-                if (s.z <= 0) { 
-                    s.z = width; 
-                    s.x = Math.random() * width - width / 2; 
-                    s.y = Math.random() * height - height / 2; 
-                }
-                
-                let x = (s.x / s.z) * width + width / 2;
-                let y = (s.y / s.z) * height + height / 2;
-                
-                let r = (1 - s.z / width) * s.size * 2;
-                if(isWarping) r *= 1.5; 
-
-                sCtx.beginPath();
-                sCtx.arc(x, y, r, 0, Math.PI*2);
-                sCtx.fillStyle = s.color;
-                sCtx.fill();
-            });
-            starAnimId = requestAnimationFrame(animateStars);
-        }
-
-        window.addEventListener('resize', initStars);
-        initStars();
-        animateStars();
-
-        // LOGICA DE CARGA & INICIO DE FUSIÓN
-        const loadText = document.getElementById('loadText');
-        const loadFill = document.getElementById('loadFill');
-        const loadWrap = document.getElementById('loadLineWrap');
-        const preloader = document.getElementById('preloader');
-
-        function simLoad() {
-            let increment = Math.random() * 0.5; 
-            loadProgress += increment;
-            
-            if (loadProgress >= 10) {
-                loadProgress = 10;
-                isWarping = true; // Activar Warp
-                preloader.classList.add('text-fade-out');
-                
-                // ARRANCAR TÚNEL INMEDIATAMENTE
-                initTunnelAnimation(); 
-
-            } else {
-                loadText.innerText = Math.floor(loadProgress) + '%';
-                loadWrap.style.width = Math.min(loadProgress * 3, 250) + 'px'; 
-                loadFill.style.width = loadProgress + '%';
-               requestAnimationFrame(simLoad);
-            }
-        }
-        requestAnimationFrame(simLoad);
-
-    
-        // ==========================================
-        // 2. TÚNEL DE HUMO & VIDEO TIME-FREEZE
-        // ==========================================
-        function initTunnelAnimation() {
-            const CONFIG = {
-                duration: 4.5,            // Duración viaje
-                fadeStart: 3.0,           // Inicio revelación visual
-                fadeEnd: 4.0,             // Fin del humo
-                speed: 3500,              // Velocidad de nubes
-                innerRadius: 140, radiusVar: 220, count: 350, stretch: 12
-            };
-
-            const video = document.getElementById('bg-video');
-            video.pause(); video.currentTime = 0; // Video congelado
-
-            let scene, camera, renderer, clouds = [], clock = new THREE.Clock();
-            let hasTriggeredFade = false;
-            let hasTriggeredPlay = false;
-
-            const textureLoader = new THREE.TextureLoader();
-            
-            textureLoader.setCrossOrigin('anonymous');
-            // Tu URL de R2
-            textureLoader.load("https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/imagenes/smoke.png", (texture) => {
-                
-                // 1. Mostrar WebGL (sobre estrellas)
-                const glContainer = document.getElementById("webgl-container");
-                glContainer.classList.add('active'); 
-                
-                // 2. Desvanecer Estrellas
-                setTimeout(() => {
-                    starContainer.classList.add('fade-out');
-                    setTimeout(() => cancelAnimationFrame(starAnimId), 2000); 
-                }, 800);
-
-                scene = new THREE.Scene();
-                camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 1, 10000);
-                camera.position.z = 1000;
-
-                const ambient = new THREE.AmbientLight(0x555555); scene.add(ambient);
-                const light = new THREE.PointLight(0xffffff, 5, 1000); light.position.set(0,0,-2000); scene.add(light);
-
-                const mat = new THREE.MeshLambertMaterial({
-                    map: texture, transparent: true, opacity: 1, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide
-                });
-                const geo = new THREE.PlaneBufferGeometry(400,400);
-
-                for(let i=0; i<CONFIG.count; i++) {
-                    let c = new THREE.Mesh(geo, mat.clone());
-                    let z = (Math.random()*10000)-5000;
-                    let a = Math.random()*Math.PI*2;
-                    let r = CONFIG.innerRadius + (Math.random()*CONFIG.radiusVar);
-                    c.position.set(Math.cos(a)*r, Math.sin(a)*r, z);
-                    c.rotation.z = Math.random()*360;
-                    c.scale.set(1.5, 1.5, CONFIG.stretch);
-                    if(Math.random()>0.5) c.material.color.setHex(0x00aaff); else c.material.color.setHex(0xffaa00);
-                    c.userData = { r: r, a: a };
-                    clouds.push(c); scene.add(c);
-                }
-
-                renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "high-performance" });
-                renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.setClearColor(0x000000, 0); 
-                glContainer.appendChild(renderer.domElement);
-
-                
-          function animate() {
-                    let elapsed = clock.getElapsedTime();
-                    
-                    camera.position.z -= CONFIG.speed * 0.016;
-                    clouds.forEach(c => { if(c.position.z > camera.position.z + 500) c.position.z -= 10000; });
-                    camera.position.x = (Math.random()-0.5)*10; camera.position.y = (Math.random()-0.5)*10;
-                    scene.rotation.z += 0.003;
-
-                    // A. FADE VISUAL (3.0s)
-                    if (elapsed > CONFIG.fadeStart) {
-                        if (!hasTriggeredFade) {
-                            document.body.classList.add('reveal-video');
-                            hasTriggeredFade = true;
-                        }
-
-                        let progress = (elapsed - CONFIG.fadeStart) / (CONFIG.fadeEnd - CONFIG.fadeStart);
-                        progress = Math.min(progress, 1);
-                        let expansion = Math.pow(progress, 3) * 3000;
-
-                        clouds.forEach(c => {
-                            let r = c.userData.r + expansion;
-                            c.position.x = Math.cos(c.userData.a) * r;
-                            c.position.y = Math.sin(c.userData.a) * r;
-                            c.scale.z = THREE.MathUtils.lerp(CONFIG.stretch, 1, progress);
-                            c.material.opacity = 1 * (1 - progress);
-                        });
-                    }
-
-                    // B. PLAY VIDEO (3.5s)
-                    if (elapsed > (CONFIG.fadeEnd - 0.5) && !hasTriggeredPlay) {
-                        const pref = localStorage.getItem('ululato_sound_pref');
-                        // Si el usuario ya activó el sonido antes, aseguramos que suene
-                        if (pref === 'on') { 
-                            video.muted = false; 
-                            video.volume = 1; 
-                            if(audioBtn) audioBtn.classList.add('active'); 
-                        }
-                        
-                        // Intento de reproducción robusto (Fallback a Muted si falla)
-                        video.play().catch(error => {
-                            console.log("Auto-play con sonido bloqueado. Reintentando en Mute...", error);
-                            video.muted = true;
-                            if(audioBtn) audioBtn.classList.remove('active');
-                            video.play().catch(e => console.error("Fallo crítico de Autoplay:", e));
-                        });
-
-                        hasTriggeredPlay = true;
-                    }
-
-                    // C. FINALIZAR
-                    if (elapsed >= CONFIG.duration) {
-                        finishIntro(renderer);
-                        return;
-                    }
-                    
-                    renderer.render(scene, camera);
-                    requestAnimationFrame(animate);
-                }
-                animate();
+    function initStars() {
+        width = starCanvas.width = window.innerWidth; 
+        height = starCanvas.height = window.innerHeight;
+        stars = [];
+        for(let i=0; i<400; i++) {
+            stars.push({
+                x: Math.random() * width - width / 2, y: Math.random() * height - height / 2, z: Math.random() * width,
+                color: Math.random() > 0.5 ? '#D4AF37' : '#00F0FF', size: Math.random() * 2
             });
         }
-
+    }
     
+    function animateStars() {
+        // En móviles, si la escena no está activa, detenemos el loop para ahorrar recursos
+        if(!isSceneActive && hasIntroFinished) return;
+
+        sCtx.fillStyle = isWarping ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 1)'; 
+        sCtx.fillRect(0, 0, width, height);
+        
+        stars.forEach(s => {
+            let speed = 2 + (loadProgress * 2.0);
+            if(isWarping) speed = 80;
+            s.z -= speed;
+            if (s.z <= 0) { s.z = width; s.x = Math.random() * width - width / 2; s.y = Math.random() * height - height / 2; }
+            let x = (s.x / s.z) * width + width / 2;
+            let y = (s.y / s.z) * height + height / 2;
+            let r = (1 - s.z / width) * s.size * 2;
+            if(isWarping) r *= 1.5; 
+            sCtx.beginPath(); sCtx.arc(x, y, r, 0, Math.PI*2); sCtx.fillStyle = s.color; sCtx.fill();
+        });
+        starAnimId = requestAnimationFrame(animateStars);
+    }
+
+    window.addEventListener('resize', initStars);
+    initStars();
+    // animateStars se llamará abajo explícitamente
+
+    // ==========================================
+    // 3. LOGICA DE CARGA (SIMULADA)
+    // ==========================================
+    const loadText = document.getElementById('loadText');
+    const loadFill = document.getElementById('loadFill');
+    const loadWrap = document.getElementById('loadLineWrap');
+
+    function simLoad() {
+        // Incremento
+        let increment = Math.random() * 0.5; 
+        loadProgress += increment;
+        
+        if (loadProgress >= 10) {
+            loadProgress = 10; // Tope visual hasta que cargue el túnel
+            isWarping = true;
+            if(preloader) preloader.classList.add('text-fade-out');
+            
+            // INICIAR TÚNEL
+            initTunnelAnimation(); 
+            // NOTA: No volvemos a llamar requestAnimationFrame aquí, initTunnel toma el control
+        } else {
+            // Actualizar UI
+            if(loadText) loadText.innerText = Math.floor(loadProgress) + '%';
+            if(loadWrap) loadWrap.style.width = Math.min(loadProgress * 3, 250) + 'px'; 
+            if(loadFill) loadFill.style.width = loadProgress + '%';
+            
+            // Loop carga
+            requestAnimationFrame(simLoad);
+        }
+    }
+
+    // ==========================================
+    // 4. TÚNEL WEBGL
+    // ==========================================
+    function initTunnelAnimation() {
+        const CONFIG = { duration: 4.5, fadeStart: 3.0, fadeEnd: 4.0, speed: 3500, innerRadius: 140, radiusVar: 220, count: 350, stretch: 12 };
+        const video = document.getElementById('bg-video');
+        
+        // FIX IOS: Intentar pausar de forma segura
+        try { if(video && !video.paused) video.pause(); video.currentTime = 0; } catch(e){ console.log("Video not ready yet"); }
+
+        let scene, camera, renderer, clouds = [], clock = new THREE.Clock();
+        let hasTriggeredFade = false;
+        let hasTriggeredPlay = false;
+
+        const textureLoader = new THREE.TextureLoader();
+        textureLoader.setCrossOrigin('anonymous');
+        
+        // URL DE IMAGEN EN R2
+        textureLoader.load("https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/imagenes/smoke.png", (texture) => {
+            
+            const glContainer = document.getElementById("webgl-container");
+            if(glContainer) glContainer.classList.add('active'); 
+            
+            setTimeout(() => {
+                if(starContainer) starContainer.classList.add('fade-out');
+                setTimeout(() => cancelAnimationFrame(starAnimId), 2000); 
+            }, 800);
+
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 1, 10000);
+            camera.position.z = 1000;
+
+            const ambient = new THREE.AmbientLight(0x555555); scene.add(ambient);
+            const light = new THREE.PointLight(0xffffff, 5, 1000); light.position.set(0,0,-2000); scene.add(light);
+
+            const mat = new THREE.MeshLambertMaterial({ map: texture, transparent: true, opacity: 1, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+            const geo = new THREE.PlaneBufferGeometry(400,400);
+
+            for(let i=0; i<CONFIG.count; i++) {
+                let c = new THREE.Mesh(geo, mat.clone());
+                let z = (Math.random()*10000)-5000;
+                let a = Math.random()*Math.PI*2;
+                let r = CONFIG.innerRadius + (Math.random()*CONFIG.radiusVar);
+                c.position.set(Math.cos(a)*r, Math.sin(a)*r, z);
+                c.rotation.z = Math.random()*360;
+                c.scale.set(1.5, 1.5, CONFIG.stretch);
+                if(Math.random()>0.5) c.material.color.setHex(0x00aaff); else c.material.color.setHex(0xffaa00);
+                c.userData = { r: r, a: a };
+                clouds.push(c); scene.add(c);
+            }
+
+            renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "high-performance" });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0x000000, 0); 
+            if(glContainer) glContainer.appendChild(renderer.domElement);
+            
+            function animate() {
+                let elapsed = clock.getElapsedTime();
+                camera.position.z -= CONFIG.speed * 0.016;
+                clouds.forEach(c => { if(c.position.z > camera.position.z + 500) c.position.z -= 10000; });
+                camera.position.x = (Math.random()-0.5)*10; camera.position.y = (Math.random()-0.5)*10;
+                scene.rotation.z += 0.003;
+
+                if (elapsed > CONFIG.fadeStart) {
+                    if (!hasTriggeredFade) { document.body.classList.add('reveal-video'); hasTriggeredFade = true; }
+                    let progress = (elapsed - CONFIG.fadeStart) / (CONFIG.fadeEnd - CONFIG.fadeStart);
+                    progress = Math.min(progress, 1);
+                    clouds.forEach(c => { c.material.opacity = 1 * (1 - progress); c.scale.z = THREE.MathUtils.lerp(CONFIG.stretch, 1, progress); });
+                }
+
+                if (elapsed > (CONFIG.fadeEnd - 0.5) && !hasTriggeredPlay) {
+                    const pref = localStorage.getItem('ululato_sound_pref');
+                    if (pref === 'on') { video.muted = false; video.volume = 1; if(audioBtn) audioBtn.classList.add('active'); }
+                    
+                    video.play().catch(error => {
+                        video.muted = true;
+                        if(audioBtn) audioBtn.classList.remove('active');
+                        video.play().catch(e => console.error("Fallo crítico de Autoplay"));
+                    });
+                    hasTriggeredPlay = true;
+                }
+
+                if (elapsed >= CONFIG.duration) { finishIntro(renderer); return; }
+                renderer.render(scene, camera);
+                requestAnimationFrame(animate);
+            }
+            animate();
+        });
+    }
 
     function finishIntro(renderer) {
         hasIntroFinished = true;
         document.body.classList.add('loaded'); 
-        
         const glContainer = document.getElementById('webgl-container');
         if(glContainer) {
-            glContainer.style.transition = 'opacity 1s';
-            glContainer.style.opacity = '0';
-            setTimeout(() => { 
-                if(renderer) renderer.dispose(); 
-                glContainer.remove();
-            }, 1000);
+            glContainer.style.transition = 'opacity 1s'; glContainer.style.opacity = '0';
+            setTimeout(() => { if(renderer) renderer.dispose(); glContainer.remove(); }, 1000);
         }
-        
         if(starContainer) starContainer.style.display = 'none'; 
         initNeuralVeil(); 
     }
 
     // ==========================================
-    // 3. CAPA NEURAL
+    // 5. CAPA NEURAL
     // ==========================================
     const neuralCanvas = document.getElementById('neural-canvas');
     const nCtx = neuralCanvas.getContext('2d');
     let nW, nH, nodes = []; 
-    // Nota: 'mouse' ya se define y actualiza en el bloque del cursor arriba
 
     function initNeuralVeil() { 
-        if(nodes.length === 0) {
-            resizeNeural(); 
-            window.addEventListener('resize', resizeNeural); 
-            // Listener de mouse eliminado para evitar duplicidad
-            createNodes(); 
-        }
+        if(nodes.length === 0) { resizeNeural(); window.addEventListener('resize', resizeNeural); createNodes(); }
         animateNeural(); 
     }
     
@@ -1182,9 +1081,7 @@
         update() { this.x += this.vx; this.y += this.vy; if(this.x < 0 || this.x > nW) this.vx *= -1; if(this.y < 0 || this.y > nH) this.vy *= -1; }
         draw() { 
              let dx = mouse.x - this.x; let dy = mouse.y - this.y; let dist = Math.sqrt(dx*dx + dy*dy);
-             if(dist < 250) {
-                 let alpha = (250 - dist) / 250; nCtx.beginPath(); nCtx.arc(this.x, this.y, this.size, 0, Math.PI*2); nCtx.fillStyle = this.color + (alpha * 0.8) + ')'; nCtx.fill();
-             }
+             if(dist < 250) { let alpha = (250 - dist) / 250; nCtx.beginPath(); nCtx.arc(this.x, this.y, this.size, 0, Math.PI*2); nCtx.fillStyle = this.color + (alpha * 0.8) + ')'; nCtx.fill(); }
         }
     }
     function createNodes() { nodes = []; for(let i=0; i<150; i++) nodes.push(new Node()); }
@@ -1197,77 +1094,36 @@
     }
 
     // ==========================================
-    // 5. NUEVO: LÓGICA DE AUDIO 
+    // 6. AUDIO BUTTON
     // ==========================================
     const audioBtn = document.getElementById('audioBtn');
-    
-    // A. RESETEO DE SEGURIDAD (La clave del éxito)
-    // Esto asegura que al recargar, el botón y el video estén sincronizados en OFF
     if(audioBtn) {
-        audioBtn.classList.remove('active'); // Apagar bombillo visualmente
-        video.muted = true; // Forzar silencio al video
-    }
-
-    // B. CONTROLADOR DE CLIC
-     if(audioBtn) {
-        // Clonar para limpiar eventos previos
+        audioBtn.classList.remove('active'); video.muted = true;
         const newBtn = audioBtn.cloneNode(true);
         audioBtn.parentNode.replaceChild(newBtn, audioBtn);
-        
         newBtn.addEventListener('click', (e) => {
             e.stopPropagation(); 
-            
-            if (video.muted) {
-                // ENCENDER
-                video.muted = false;
-                video.volume = 1;
-                newBtn.classList.remove('inactive');
-                newBtn.classList.add('active');
-            } else {
-                // APAGAR
-                video.muted = true;
-                newBtn.classList.remove('active');
-                newBtn.classList.add('inactive');
-            }
+            if (video.muted) { video.muted = false; video.volume = 1; newBtn.classList.remove('inactive'); newBtn.classList.add('active'); } 
+            else { video.muted = true; newBtn.classList.remove('active'); newBtn.classList.add('inactive'); }
         });
     }
 
-
     // ==========================================
-    // 6. OBSERVER (SOLO PARA PAUSAR/REANUDAR)
+    // 7. OBSERVER (SOLO PARA OPTIMIZACIÓN)
     // ==========================================
     const sectionObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
+            // AQUÍ ESTABA EL ERROR: No iniciamos la carga aquí, solo pausamos/reanudamos
             if (entry.isIntersecting) {
                 isSceneActive = true;
-                
-                // Solo nos importa si el usuario REGRESA a la sección
                 if (hasIntroFinished) {
-                    console.log("Hero: Regreso del usuario.");
-                    
-                    // Reanudar animaciones visuales
                     if(!neuralAnimId) animateNeural();                    
-                    
-                    // Asegurar video play en silencio al regresar
-                    if(video && video.paused) {
-                        video.muted = true; 
-                        video.play().catch(()=>{});
-                    }
-                    
-                    // Asegurar que la UI de carga esté oculta
-                    if(preloader) preloader.style.display = 'none';
-                    if(starContainer) starContainer.style.display = 'none';
+                    if(video && video.paused) { video.muted = true; video.play().catch(()=>{}); }
                 }
-                // NOTA: ¡Aquí quitamos el bloque "else { simLoad... }" para que no dependa del scroll!
-                
             } else {
-                // El usuario hizo scroll y se fue: Pausar todo
                 isSceneActive = false;
                 cancelAnimationFrame(starAnimId);
-                // No cancelamos tunnelAnimId aquí porque ese se maneja solo al terminar
                 cancelAnimationFrame(neuralAnimId);
-                // No cancelamos loadAnimId porque la carga debe terminar sí o sí
-                
                 if(video && !video.paused) video.pause();
             }
         });
@@ -1277,14 +1133,10 @@
     if(target) sectionObserver.observe(target);
 
     // ==========================================
-    // 7. ARRANQUE INCONDICIONAL (SOLUCIÓN FINAL)
+    // 8. ARRANQUE OBLIGATORIO (SOLUCIÓN FINAL 0%)
     // ==========================================
-    // Esto va FUERA del observer para que arranque SIEMPRE al abrir la página
-    
-    // 1. Iniciar estrellas
+    // Estas dos líneas fuera de todo IF son las que arreglan iOS
     requestAnimationFrame(animateStars);
-    
-    // 2. Iniciar barra de carga (Esto arregla el 0% pegado)
     requestAnimationFrame(simLoad);
 
 } // CIERRE BLOQUE
