@@ -1029,7 +1029,10 @@
             let hasTriggeredPlay = false;
 
             const textureLoader = new THREE.TextureLoader();
-            textureLoader.load("https://raw.githubusercontent.com/navin-navi/codepen-assets/master/images/smoke.png", (texture) => {
+            
+            textureLoader.setCrossOrigin('anonymous');
+            // Tu URL de R2
+            textureLoader.load("https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/imagenes/smoke.png", (texture) => {
                 
                 // 1. Mostrar WebGL (sobre estrellas)
                 const glContainer = document.getElementById("webgl-container");
