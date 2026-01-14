@@ -824,23 +824,38 @@
         
         
 <script>
-        // ==========================================================================================================================================================
-        // SCRIPT ESCENA 1
-        // ===========================================================================================================================================================
-{ // BLOQUE DE AISLAMIENTO SCENE 1
+// ====================================================================================================
+// SCRIPT ESCENA 1 (BLINDADO PARA IOS/SAFARI)
+// ====================================================================================================
+window.addEventListener('load', function() {
+    
+    // --- ZONA DE SEGURIDAD: SI ALGO FALLA, ABRIR LA PÁGINA EN 5 SEGUNDOS ---
+    setTimeout(() => {
+        const preloader = document.getElementById('preloader');
+        if (preloader && getComputedStyle(preloader).display !== 'none') {
+            console.warn("Failsafe activado: La carga tardó demasiado.");
+            document.body.classList.add('loaded');
+            preloader.style.display = 'none';
+            document.getElementById('loader-canvas-container').style.display = 'none';
+        }
+    }, 6000);
 
-    // --- 0. VARIABLES GLOBALES DEL BLOQUE ---
+    // --- 0. VARIABLES GLOBALES ---
     let mouse = { x: window.innerWidth/2, y: window.innerHeight/2 }; 
     const containerId = 'scene-material'; 
     let isSceneActive = true; 
     let hasIntroFinished = false; 
-    let neuralAnimId, starAnimId;   
+    let neuralAnimId, starAnimId;
+    
+    // ELEMENTOS DOM (Ahora estamos seguros de que existen)
     const video = document.getElementById('bg-video');
     const starCanvas = document.getElementById('loader-canvas');
-    const sCtx = starCanvas.getContext('2d');
     const starContainer = document.getElementById('loader-canvas-container');
     const preloader = document.getElementById('preloader');
-    
+    const loadText = document.getElementById('loadText');
+    const loadFill = document.getElementById('loadFill');
+    const loadWrap = document.getElementById('loadLineWrap');
+
     // --- 1. CURSOR ---
     const dot = document.querySelector('.cursor-dot');
     const circle = document.querySelector('.cursor-circle');
@@ -891,84 +906,94 @@
     // 2. ESTRELLAS (CANVAS)
     // ==========================================
     let width, height, stars = [], loadProgress = 0, isWarping = false;
-    
-    function initStars() {
-        width = starCanvas.width = window.innerWidth; 
-        height = starCanvas.height = window.innerHeight;
-        stars = [];
-        for(let i=0; i<400; i++) {
-            stars.push({
-                x: Math.random() * width - width / 2, y: Math.random() * height - height / 2, z: Math.random() * width,
-                color: Math.random() > 0.5 ? '#D4AF37' : '#00F0FF', size: Math.random() * 2
-            });
+    let sCtx;
+
+    if (starCanvas) {
+        sCtx = starCanvas.getContext('2d');
+        function initStars() {
+            width = starCanvas.width = window.innerWidth; 
+            height = starCanvas.height = window.innerHeight;
+            stars = [];
+            for(let i=0; i<400; i++) {
+                stars.push({
+                    x: Math.random() * width - width / 2, y: Math.random() * height - height / 2, z: Math.random() * width,
+                    color: Math.random() > 0.5 ? '#D4AF37' : '#00F0FF', size: Math.random() * 2
+                });
+            }
         }
-    }
-    
-    function animateStars() {
-        // En móviles, si la escena no está activa, detenemos el loop para ahorrar recursos
-        if(!isSceneActive && hasIntroFinished) return;
-
-        sCtx.fillStyle = isWarping ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 1)'; 
-        sCtx.fillRect(0, 0, width, height);
         
-        stars.forEach(s => {
-            let speed = 2 + (loadProgress * 2.0);
-            if(isWarping) speed = 80;
-            s.z -= speed;
-            if (s.z <= 0) { s.z = width; s.x = Math.random() * width - width / 2; s.y = Math.random() * height - height / 2; }
-            let x = (s.x / s.z) * width + width / 2;
-            let y = (s.y / s.z) * height + height / 2;
-            let r = (1 - s.z / width) * s.size * 2;
-            if(isWarping) r *= 1.5; 
-            sCtx.beginPath(); sCtx.arc(x, y, r, 0, Math.PI*2); sCtx.fillStyle = s.color; sCtx.fill();
-        });
-        starAnimId = requestAnimationFrame(animateStars);
+        function animateStars() {
+            if(!isSceneActive && hasIntroFinished) return;
+            if(!sCtx) return;
+
+            sCtx.fillStyle = isWarping ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 1)'; 
+            sCtx.fillRect(0, 0, width, height);
+            
+            stars.forEach(s => {
+                let speed = 2 + (loadProgress * 2.0);
+                if(isWarping) speed = 80;
+                s.z -= speed;
+                if (s.z <= 0) { s.z = width; s.x = Math.random() * width - width / 2; s.y = Math.random() * height - height / 2; }
+                let x = (s.x / s.z) * width + width / 2;
+                let y = (s.y / s.z) * height + height / 2;
+                let r = (1 - s.z / width) * s.size * 2;
+                if(isWarping) r *= 1.5; 
+                sCtx.beginPath(); sCtx.arc(x, y, r, 0, Math.PI*2); sCtx.fillStyle = s.color; sCtx.fill();
+            });
+            starAnimId = requestAnimationFrame(animateStars);
+        }
+
+        window.addEventListener('resize', initStars);
+        initStars();
+        animateStars();
     }
 
-    window.addEventListener('resize', initStars);
-    initStars();
-    // animateStars se llamará abajo explícitamente
-
     // ==========================================
-    // 3. LOGICA DE CARGA (SIMULADA)
+    // 3. LOGICA DE CARGA (SIMULADA) - EL CORAZÓN DEL PROBLEMA
     // ==========================================
-    const loadText = document.getElementById('loadText');
-    const loadFill = document.getElementById('loadFill');
-    const loadWrap = document.getElementById('loadLineWrap');
-
     function simLoad() {
-        // Incremento
-        let increment = Math.random() * 0.5; 
+        if (!loadText) return; // Si no existe el elemento, salir para no romper JS
+
+        let increment = Math.random() * 0.8; // Un poco más rápido
         loadProgress += increment;
         
         if (loadProgress >= 10) {
-            loadProgress = 10; // Tope visual hasta que cargue el túnel
+            loadProgress = 10;
             isWarping = true;
             if(preloader) preloader.classList.add('text-fade-out');
             
-            // INICIAR TÚNEL
-            initTunnelAnimation(); 
-            // NOTA: No volvemos a llamar requestAnimationFrame aquí, initTunnel toma el control
+            // INTENTAR INICIAR TÚNEL
+            try {
+                if (typeof THREE !== 'undefined') {
+                    initTunnelAnimation(); 
+                } else {
+                    console.error("THREE.js no cargó. Saltando intro.");
+                    finishIntro(null);
+                }
+            } catch(e) {
+                console.error("Error en túnel:", e);
+                finishIntro(null);
+            }
         } else {
-            // Actualizar UI
+            // Actualizar UI con chequeos de seguridad
             if(loadText) loadText.innerText = Math.floor(loadProgress) + '%';
             if(loadWrap) loadWrap.style.width = Math.min(loadProgress * 3, 250) + 'px'; 
             if(loadFill) loadFill.style.width = loadProgress + '%';
             
-            // Loop carga
             requestAnimationFrame(simLoad);
         }
     }
+    // Iniciar carga
+    requestAnimationFrame(simLoad);
+
 
     // ==========================================
     // 4. TÚNEL WEBGL
     // ==========================================
     function initTunnelAnimation() {
         const CONFIG = { duration: 4.5, fadeStart: 3.0, fadeEnd: 4.0, speed: 3500, innerRadius: 140, radiusVar: 220, count: 350, stretch: 12 };
-        const video = document.getElementById('bg-video');
         
-        // FIX IOS: Intentar pausar de forma segura
-        try { if(video && !video.paused) video.pause(); video.currentTime = 0; } catch(e){ console.log("Video not ready yet"); }
+        try { if(video && !video.paused) video.pause(); video.currentTime = 0; } catch(e){}
 
         let scene, camera, renderer, clouds = [], clock = new THREE.Clock();
         let hasTriggeredFade = false;
@@ -1047,6 +1072,10 @@
                 requestAnimationFrame(animate);
             }
             animate();
+        }, undefined, function(err) {
+            // SI LA TEXTURA FALLA EN IOS, FORZAR INICIO
+            console.error("Error cargando textura humo:", err);
+            finishIntro(null);
         });
     }
 
@@ -1066,31 +1095,33 @@
     // 5. CAPA NEURAL
     // ==========================================
     const neuralCanvas = document.getElementById('neural-canvas');
-    const nCtx = neuralCanvas.getContext('2d');
-    let nW, nH, nodes = []; 
+    let nCtx, nW, nH, nodes = []; 
 
-    function initNeuralVeil() { 
-        if(nodes.length === 0) { resizeNeural(); window.addEventListener('resize', resizeNeural); createNodes(); }
-        animateNeural(); 
-    }
-    
-    function resizeNeural() { nW = neuralCanvas.width = window.innerWidth; nH = neuralCanvas.height = window.innerHeight; }
-    
-    class Node {
-        constructor() { this.x = Math.random() * nW; this.y = Math.random() * nH; this.vx = (Math.random() - 0.5) * 0.5; this.vy = (Math.random() - 0.5) * 0.5; this.size = Math.random() * 3 + 2; this.color = Math.random() > 0.7 ? 'rgba(0, 240, 255,' : 'rgba(255, 255, 255,'; }
-        update() { this.x += this.vx; this.y += this.vy; if(this.x < 0 || this.x > nW) this.vx *= -1; if(this.y < 0 || this.y > nH) this.vy *= -1; }
-        draw() { 
-             let dx = mouse.x - this.x; let dy = mouse.y - this.y; let dist = Math.sqrt(dx*dx + dy*dy);
-             if(dist < 250) { let alpha = (250 - dist) / 250; nCtx.beginPath(); nCtx.arc(this.x, this.y, this.size, 0, Math.PI*2); nCtx.fillStyle = this.color + (alpha * 0.8) + ')'; nCtx.fill(); }
+    if (neuralCanvas) {
+        nCtx = neuralCanvas.getContext('2d');
+        function initNeuralVeil() { 
+            if(nodes.length === 0) { resizeNeural(); window.addEventListener('resize', resizeNeural); createNodes(); }
+            animateNeural(); 
         }
-    }
-    function createNodes() { nodes = []; for(let i=0; i<150; i++) nodes.push(new Node()); }
-    
-    function animateNeural() { 
-        if (!isSceneActive) return; 
-        nCtx.clearRect(0, 0, nW, nH); 
-        nodes.forEach(node => { node.update(); node.draw(); }); 
-        neuralAnimId = requestAnimationFrame(animateNeural); 
+        
+        function resizeNeural() { nW = neuralCanvas.width = window.innerWidth; nH = neuralCanvas.height = window.innerHeight; }
+        
+        class Node {
+            constructor() { this.x = Math.random() * nW; this.y = Math.random() * nH; this.vx = (Math.random() - 0.5) * 0.5; this.vy = (Math.random() - 0.5) * 0.5; this.size = Math.random() * 3 + 2; this.color = Math.random() > 0.7 ? 'rgba(0, 240, 255,' : 'rgba(255, 255, 255,'; }
+            update() { this.x += this.vx; this.y += this.vy; if(this.x < 0 || this.x > nW) this.vx *= -1; if(this.y < 0 || this.y > nH) this.vy *= -1; }
+            draw() { 
+                 let dx = mouse.x - this.x; let dy = mouse.y - this.y; let dist = Math.sqrt(dx*dx + dy*dy);
+                 if(dist < 250) { let alpha = (250 - dist) / 250; nCtx.beginPath(); nCtx.arc(this.x, this.y, this.size, 0, Math.PI*2); nCtx.fillStyle = this.color + (alpha * 0.8) + ')'; nCtx.fill(); }
+            }
+        }
+        function createNodes() { nodes = []; for(let i=0; i<150; i++) nodes.push(new Node()); }
+        
+        function animateNeural() { 
+            if (!isSceneActive) return; 
+            nCtx.clearRect(0, 0, nW, nH); 
+            nodes.forEach(node => { node.update(); node.draw(); }); 
+            neuralAnimId = requestAnimationFrame(animateNeural); 
+        }
     }
 
     // ==========================================
@@ -1109,15 +1140,14 @@
     }
 
     // ==========================================
-    // 7. OBSERVER (SOLO PARA OPTIMIZACIÓN)
+    // 7. OBSERVER
     // ==========================================
     const sectionObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
-            // AQUÍ ESTABA EL ERROR: No iniciamos la carga aquí, solo pausamos/reanudamos
             if (entry.isIntersecting) {
                 isSceneActive = true;
                 if (hasIntroFinished) {
-                    if(!neuralAnimId) animateNeural();                    
+                    if(!neuralAnimId && typeof animateNeural === 'function') animateNeural();                    
                     if(video && video.paused) { video.muted = true; video.play().catch(()=>{}); }
                 }
             } else {
@@ -1132,14 +1162,7 @@
     const target = document.getElementById(containerId);
     if(target) sectionObserver.observe(target);
 
-    // ==========================================
-    // 8. ARRANQUE OBLIGATORIO (SOLUCIÓN FINAL 0%)
-    // ==========================================
-    // Estas dos líneas fuera de todo IF son las que arreglan iOS
-    requestAnimationFrame(animateStars);
-    requestAnimationFrame(simLoad);
-
-} // CIERRE BLOQUE
+}); // FIN WINDOW.ONLOAD
 </script>
     
       
