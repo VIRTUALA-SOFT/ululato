@@ -974,23 +974,23 @@
         const preloader = document.getElementById('preloader');
 
         function simLoad() {
-            let increment = Math.random() * 0.5; 
-            loadProgress += increment;
+           // let increment = Math.random() * 0.5; 
+           // loadProgress += increment;
             
-            if (loadProgress >= 100) {
-                loadProgress = 100;
+           // if (loadProgress >= 100) {
+           //     loadProgress = 100;
                 isWarping = true; // Activar Warp
                 preloader.classList.add('text-fade-out');
                 
                 // ARRANCAR TÚNEL INMEDIATAMENTE
                 initTunnelAnimation(); 
 
-            } else {
+        //    } else {
                // loadText.innerText = Math.floor(loadProgress) + '%';
               //  loadWrap.style.width = Math.min(loadProgress * 3, 250) + 'px'; 
               //  loadFill.style.width = loadProgress + '%';
-                requestAnimationFrame(simLoad);
-            }
+         //      requestAnimationFrame(simLoad);
+           // }
         }
         requestAnimationFrame(simLoad);
 
