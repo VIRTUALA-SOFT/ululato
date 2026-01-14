@@ -545,10 +545,10 @@
 <body style="background-color: #000000;">
 
     <!-- 1. FONDO DE ESTRELLAS (Canvas separado para continuidad) -->
-   <!-- <div id="loader-canvas-container">
+    <div id="loader-canvas-container">
         <canvas id="loader-canvas"></canvas>
     </div>
--->
+
     <!-- 2. UI PRELOADER -->
     <div class="preloader" id="preloader">
         <div class="loader-content">
@@ -964,8 +964,8 @@
         }
 
         window.addEventListener('resize', initStars);
-      //  initStars();
-      //  animateStars();
+        initStars();
+        animateStars();
 
         // LOGICA DE CARGA & INICIO DE FUSIÓN
         const loadText = document.getElementById('loadText');
@@ -974,23 +974,23 @@
         const preloader = document.getElementById('preloader');
 
         function simLoad() {
-           // let increment = Math.random() * 0.5; 
-           // loadProgress += increment;
+            let increment = Math.random() * 0.5; 
+            loadProgress += increment;
             
-           // if (loadProgress >= 100) {
-           //     loadProgress = 100;
+            if (loadProgress >= 10) {
+                loadProgress = 10;
                 isWarping = true; // Activar Warp
                 preloader.classList.add('text-fade-out');
                 
                 // ARRANCAR TÚNEL INMEDIATAMENTE
                 initTunnelAnimation(); 
 
-        //    } else {
-               // loadText.innerText = Math.floor(loadProgress) + '%';
-              //  loadWrap.style.width = Math.min(loadProgress * 3, 250) + 'px'; 
-              //  loadFill.style.width = loadProgress + '%';
-         //      requestAnimationFrame(simLoad);
-           // }
+            } else {
+                loadText.innerText = Math.floor(loadProgress) + '%';
+                loadWrap.style.width = Math.min(loadProgress * 3, 250) + 'px'; 
+                loadFill.style.width = loadProgress + '%';
+               requestAnimationFrame(simLoad);
+            }
         }
         requestAnimationFrame(simLoad);
 
@@ -1240,7 +1240,7 @@
                 } else {
                     console.log("Hero: Primera carga.");
                     if (loadProgress < 100 && !loadAnimId) {
-                       // animateStars();
+                        animateStars();
                         simLoad(); 
                     }
                 }
