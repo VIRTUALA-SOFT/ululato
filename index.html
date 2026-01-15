@@ -637,45 +637,56 @@
             width: 100%;
         }
 
-        @media (max-width: 768px) {
-            .back-to-start-btn {
-        top: 20px !important;       /* Más arriba para no estorbar */
-        right: 20px !important;     /* Más margen derecho para que no se corte */
+       
+    .back-to-start-btn {
+        top: 25px !important;       
+        right: 25px !important;     
         
-        /* Truco para cambiar el texto largo por uno corto en CSS */
-        font-size: 0 !important;    /* Ocultamos el texto "VOLVER AL INICIO" */
+        /* Ocultamos el texto original */
+        font-size: 0 !important;    
         
-        width: 40px !important;     /* Tamaño botón cuadrado */
-        height: 40px !important;
+        /* Geometría del Círculo */
+        width: 44px !important;     
+        height: 44px !important;
+        border-radius: 50% !important; 
         
-        border: 1px solid rgba(255, 255, 255, 0.4) !important;
-        border-radius: 50% !important; /* Lo hacemos redondo */
+        /* EL CÍRCULO DORADO */
+        border: 1.5px solid #D4AF37 !important; /* Borde Oro */
+        background: rgba(0, 0, 0, 0.5) !important; /* Fondo oscuro semitransparente */
+        backdrop-filter: blur(5px) !important;
+        
         display: flex !important;
         justify-content: center !important;
         align-items: center !important;
         padding: 0 !important;
         
-        /* Anclaje de hardware para evitar que se mueva al tocar cintas */
+        /* Anclaje de hardware */
         transform: translateZ(0) !important;
-        will-change: transform, opacity;
-        background: rgba(0, 0, 0, 0.3) !important; /* Fondo suave para contraste */
-        backdrop-filter: blur(4px) !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        z-index: 9999 !important;
     }
 
-    /* Dibujamos una flecha o texto corto "X" usando ::before */
+    /* LA FLECHA DORADA (Dibujada con CSS puro para nitidez) */
     .back-to-start-btn::before {
-        content: '✕';              /* Icono de cerrar/volver limpio */
-        font-size: 1.2rem !important; /* Tamaño visible */
-        color: var(--white) !important;
+        content: '' !important;
         display: block !important;
-        line-height: 1 !important;
+        width: 10px !important;  /* Tamaño de la flecha */
+        height: 10px !important;
+        
+        /* Líneas de la flecha en ORO */
+        border-top: 2px solid #D4AF37 !important;
+        border-left: 2px solid #D4AF37 !important;
+        
+        /* Rotación para que apunte hacia ARRIBA (Inicio) */
+        /* Ajustamos translate para centrarla ópticamente */
+        transform: rotate(45deg) translate(2px, 2px) !important; 
     }
 
-    /* Eliminamos la línea inferior animada en móvil porque no hay hover */
+    /* Eliminamos cualquier adorno extra anterior */
     .back-to-start-btn::after {
         display: none !important;
     }
-        }
             
     </style>
 </head>
