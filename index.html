@@ -1374,64 +1374,77 @@ window.addEventListener('load', function() {
 
 
     
-
-       
-
-     
 <script>
-        // ==========================================================================================================================================================
-        // SCRIPT SCROLL ESCENA 1
-        // ===========================================================================================================================================================
-    // Variables globales para el scroll
+    // ==========================================================================================================================================================
+    // SCRIPT SCROLL ESCENA 1 (SOPORTE MOUSE Y TÁCTIL)
+    // ===========================================================================================================================================================
+    
+    // Variables globales para el scroll/warp
     let isWarping = false; 
+    let touchStartY = 0; // Para guardar dónde empieza el toque
 
-    window.addEventListener('wheel', (e) => {
-        
-        // 1. CONDICIONES DE SCROLL (Lectura directa del DOM)
-        // Detectamos si el body tiene la clase 'loaded' (que pone el Script 1 al terminar)
+    // --- FUNCIÓN CENTRAL DE VERIFICACIÓN ---
+    // Esta función comprueba si es válido lanzar la transición
+    function checkWarpTrigger(scrollingDown) {
+        // 1. CONDICIONES DE ESTADO
         const isIntroFinished = document.body.classList.contains('loaded');
-
-        // Detectamos si la Escena 1 está visible actualmente
         const sceneMaterial = document.getElementById('scene-material');
         const isScene1Active = sceneMaterial && sceneMaterial.classList.contains('active');
-
-        // Dirección del scroll
-        const scrollingDown = e.deltaY > 0;
-        
-        // Bloqueo de seguridad
         const notWarping = !isWarping;
 
-        // --- GATILLO DE TRANSICIÓN ---
+        // 2. EJECUCIÓN
         if (scrollingDown && isScene1Active && notWarping && isIntroFinished) {
             console.log("🚀 DESPEGUE: Iniciando Warp a Escena 2");
-            isWarping = true; // Bloqueamos para que no se dispare mil veces
+            isWarping = true; 
             initWarpSequence(); 
         }
+    }
 
+    // --- DETECCIÓN PARA PC (MOUSE WHEEL) ---
+    window.addEventListener('wheel', (e) => {
+        const scrollingDown = e.deltaY > 0;
+        checkWarpTrigger(scrollingDown);
     }, { passive: true });
-     
+
+
+    // --- DETECCIÓN PARA MÓVIL (TOUCH SWIPE) ---
     
+    // 1. Guardar posición inicial del dedo
+    window.addEventListener('touchstart', (e) => {
+        touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+
+    // 2. Detectar movimiento del dedo
+    window.addEventListener('touchmove', (e) => {
+        if (isWarping) return; // Si ya está transicionando, ignorar
+
+        const touchEndY = e.touches[0].clientY;
+        const difference = touchStartY - touchEndY;
+
+        // Umbral de sensibilidad (50px): 
+        // Si el usuario desliza el dedo hacia arriba más de 50px, cuenta como scroll down
+        if (difference > 50) { 
+            checkWarpTrigger(true); // true = estamos bajando (scrolling down)
+        }
+    }, { passive: true });
+
+
+    // --- SECUENCIA DE WARP (LÓGICA ORIGINAL INTACTA) ---
     function initWarpSequence() {
         const sceneMaterial = document.getElementById('scene-material');
         const sceneDigital = document.getElementById('scene-digital');
         const warpLayer = document.getElementById('warp-layer'); 
         const warpVideo = document.getElementById('warp-video');
-        let hasFaded = false; // Control para el fade anticipado
+        let hasFaded = false; 
         
-        // 1. PREPARAR (Asegurar que la capa es interactiva pero aún invisible si se quiere esperar)
         warpLayer.style.pointerEvents = 'all'; 
-        
-        // Reset del video por si acaso
         warpVideo.currentTime = 0;
-
-        // Intentar reproducir con sonido, fallback a mute
         warpVideo.muted = false; 
         
         const playPromise = warpVideo.play();
 
         if (playPromise !== undefined) {
             playPromise.then(() => {
-                // Éxito: El video arrancó
                 showWarpLayer();
             }).catch(error => {
                 console.log("Warp con sonido bloqueado. Intentando Muted.", error);
@@ -1446,134 +1459,71 @@ window.addEventListener('load', function() {
         }
 
         function showWarpLayer() {
-            // SECUENCIA DE ENTRADA FLUIDA (GSAP)
-            // En lugar de un corte brusco, animamos la salida de la escena 1 y la entrada del warp
-            
             const tl = gsap.timeline();
+            tl.to("#scene-material", { scale: 1.5, opacity: 0, duration: 1.2, ease: "power3.in" }, 0);
+            tl.to(warpLayer, { opacity: 1, duration: 1.5, ease: "power2.out" }, 0.1); 
 
-            // A. Efecto de "velocidad luz": Zoom In + Desvanecimiento de la Escena 1
-            tl.to("#scene-material", {
-                scale: 1.5,       // Simula ir hacia adelante
-                opacity: 0,       // Desvanece suavemente
-                duration: 1.2,
-                ease: "power3.in", // Aceleración exponencial
-            }, 0);
-
-            // B. Entrada del Warp (superpuesto suavemente)
-            tl.to(warpLayer, {
-                opacity: 1,
-                duration: 1.5,    // Entrada más lenta para evitar el "golpe" visual
-                ease: "power2.out"
-            }, 0.1); // Empieza casi al mismo tiempo
-
-            
-            // Monitorizar tiempo para iniciar el fade out en el segundo 2
             warpVideo.addEventListener('timeupdate', checkFadeOut);
-
-            // 2. CAMBIO DE ESCENA (Sincronizado al seg 1)
-            setTimeout(() => {
-                swapScenes();
-            }, 1000); 
+            setTimeout(() => { swapScenes(); }, 1000); 
         }
 
         function checkFadeOut() {
-            // INICIO DEL FADE OUT AL SEGUNDO 2
             if (!hasFaded && warpVideo.currentTime >= 2) {
                 hasFaded = true;
-                // Transición suave de opacidad mientras el video sigue corriendo
                 gsap.to(warpLayer, { 
                     opacity: 0, 
-                    duration: 2.0, // Fade largo para mezcla inmersiva
+                    duration: 2.0, 
                     ease: "power2.inOut",
-                    onComplete: () => {
-                        finishSequence();
-                    }
+                    onComplete: () => { finishSequence(); }
                 });
             }
         }
 
         function swapScenes() {
-             // A. Apagar Escena 1
-             sceneMaterial.classList.remove('active');
-             sceneMaterial.classList.add('hidden');
-     
-             // B. Encender Escena 2 (empezará a reproducirse detrás del warp)
-             sceneDigital.classList.remove('hidden');
-             sceneDigital.classList.add('active');
-             
-             // C. AVISAR A LA ESCENA 2 (Desbloquear candado)
-             if (typeof window.activarEscena2 === 'function') {
-                 window.activarEscena2();
-             }
-
-             // D. MOSTRAR BOTÓN DE VOLVER
+             sceneMaterial.classList.remove('active'); sceneMaterial.classList.add('hidden');
+             sceneDigital.classList.remove('hidden'); sceneDigital.classList.add('active');
+             if (typeof window.activarEscena2 === 'function') window.activarEscena2();
              const backBtn = document.getElementById('back-to-start');
              if(backBtn) backBtn.classList.add('visible');
         }
     
         function endWarpSequence() {
-            // Red de seguridad si el video termina antes del fade
             if (!hasFaded) {
-                gsap.to(warpLayer, { 
-                    opacity: 0, 
-                    duration: 0.5, 
-                    onComplete: finishSequence
-                });
+                gsap.to(warpLayer, { opacity: 0, duration: 0.5, onComplete: finishSequence });
             }
         }
 
         function finishSequence() {
-            swapScenes(); // Asegurar cambio
+            swapScenes(); 
             warpLayer.style.pointerEvents = 'none'; 
             isWarping = false; 
             warpVideo.pause();
             warpVideo.removeEventListener('timeupdate', checkFadeOut);
         }
 
-        // 3. ATERRIZAJE FINAL
         warpVideo.onended = endWarpSequence;
     }
 
-    // --- LÓGICA DE VOLVER AL INICIO ---
+    // --- LÓGICA DE VOLVER AL INICIO (ORIGINAL INTACTA) ---
     const backToStartBtn = document.getElementById('back-to-start');
     if(backToStartBtn) {
         backToStartBtn.addEventListener('click', () => {
-            // 1. Ocultar Escena 2
             const sceneDigital = document.getElementById('scene-digital');
             gsap.to(sceneDigital, { opacity: 0, duration: 1, onComplete: () => {
-                sceneDigital.classList.remove('active');
-                sceneDigital.classList.add('hidden');
-                sceneDigital.style.opacity = ''; // Limpiar para futuro uso
-                
-                // Resetear estado interno de la Escena 2
+                sceneDigital.classList.remove('active'); sceneDigital.classList.add('hidden'); sceneDigital.style.opacity = ''; 
                 if(typeof window.resetEscena2 === 'function') window.resetEscena2();
-                
-                // Pausar videos escena 2
-                const v1 = document.getElementById('vid-intro');
-                const v2 = document.getElementById('vid-loop');
-                if(v1) v1.pause();
-                if(v2) v2.pause();
+                const v1 = document.getElementById('vid-intro'); const v2 = document.getElementById('vid-loop');
+                if(v1) v1.pause(); if(v2) v2.pause();
             }});
 
-            // 2. Mostrar Escena 1
             const sceneMaterial = document.getElementById('scene-material');
-            sceneMaterial.classList.remove('hidden');
-            sceneMaterial.classList.add('active');
-            
-            // Animación de entrada suave (Fade In + Zoom Out sutil para revertir el Warp)
-            gsap.fromTo(sceneMaterial, 
-                { opacity: 0, scale: 1.2 }, 
-                { opacity: 1, scale: 1, duration: 1.5, ease: "power2.out" }
-            );
+            sceneMaterial.classList.remove('hidden'); sceneMaterial.classList.add('active');
+            gsap.fromTo(sceneMaterial, { opacity: 0, scale: 1.2 }, { opacity: 1, scale: 1, duration: 1.5, ease: "power2.out" });
 
-            // Reproducir video de fondo Escena 1
             const bgVideo = document.getElementById('bg-video');
             if(bgVideo) bgVideo.play().catch(()=>{});
 
-            // 3. Ocultar el botón mismo
             backToStartBtn.classList.remove('visible');
-
-            // 4. Resetear variable global de Warp para permitir bajar de nuevo
             isWarping = false; 
         });
     }
