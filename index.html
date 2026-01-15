@@ -195,79 +195,103 @@
         .cursor-dot { position: fixed; top: 0; left: 0; width: 12px; height: 12px; background: var(--gold); border-radius: 50%; pointer-events: none; z-index: 10009; transform: translate(-50%, -50%); box-shadow: 0 0 10px rgba(212, 175, 55, 0.8); }
         .cursor-circle { position: fixed; top: 0; left: 0; width: 48px; height: 48px; border: 1px solid rgba(212, 175, 55, 0.6); border-radius: 50%; pointer-events: none; z-index: 99999; transform: translate(-50%, -50%); transition: width 0.3s, height 0.3s, background 0.3s, border-color 0.3s; will-change: transform; }
 
-        @media (max-width: 768px) {
-            .nav-bar { padding: 20px; }
-            .hero-title { font-size: 9vw; }
-            .scroll-indicator { display: none; }
-            .audio-toggle { bottom: 30px; right: 30px; }
-            .menu-curtain {
-                justify-content: center; 
-                padding-top: 80px 0; /* Espacio para no tapar el botón cerrar */
-                overflow-y: auto; /* Permitir scroll si la pantalla es muy pequeña */
-            }
-            /* En móvil usamos un negro sólido al 85% en lugar de gradiente transparente */
-            background: rgba(10, 10, 10, 0.85); 
-            /* Aumentamos el blur para móvil para disimular más el video de fondo */
-            -webkit-backdrop-filter: blur(20px);
-            backdrop-filter: blur(20px);
-           .menu-item { 
-               margin: 8px 0; /* Menos separación vertical */
-           }
-             /* Hacer los números y anillos más pequeños */
-            .nav-number-wrap { width: 25px; height: 25px; }
-            .number-ring-svg { width: 35px; height: 35px; top: -5px; left: -5px; }
-            .nav-number { font-size: 0.6rem; }
-            .menu-link { gap: 10px; }
+/* ================================================================= */
+/* MEDIA QUERY FINAL (MÓVIL) - COPIA Y REEMPLAZA TODO EL BLOQUE */
+/* ================================================================= */
 
-            /* --- AJUSTES RESPONSIVOS PARA ETIQUETAS (Dentro del Media Query) --- */
+@media (max-width: 768px) {
     
-    /* 1. Reducir tamaño y escala de las etiquetas */
+    /* 1. AJUSTES GENERALES UI */
+    .nav-bar { padding: 20px !important; }
+    .hero-title { font-size: 10vw !important; }
+    .hero-sub { font-size: 0.7rem !important; width: 90% !important; margin: 20px auto 0 !important; white-space: normal !important; }
+    .scroll-indicator { display: none !important; }
+    .audio-toggle { bottom: 20px !important; right: 20px !important; transform: scale(0.8); }
+    .brand-logo-wrap { width: 50px !important; height: 50px !important; }
+    
+    /* 2. AJUSTES DEL MENÚ DESPLEGABLE (HAMBURGUESA) */
+    .menu-curtain {
+        justify-content: center !important; 
+        padding-top: 0 !important;
+        background: rgba(5, 5, 5, 0.95) !important; /* Fondo más oscuro para legibilidad */
+        backdrop-filter: blur(20px) !important;
+        -webkit-backdrop-filter: blur(20px) !important;
+    }
+    .menu-link { 
+        font-size: 1.8rem !important; /* Texto menú más pequeño */
+        gap: 15px !important; 
+        margin-bottom: 10px !important;
+    }
+    .nav-number-wrap { width: 30px !important; height: 30px !important; }
+    .nav-number { font-size: 0.7rem !important; }
+    .number-ring-svg { width: 40px !important; height: 40px !important; top: -5px !important; left: -5px !important; }
+
+    /* 3. CTA CENTRAL (EL ORIGEN DEL TEJIDO) */
+    .hero-cta {
+        width: 80% !important;
+        z-index: 10 !important; /* Asegurar que no tape los botones flotantes */
+    }
+    .hero-cta h1 { font-size: 1.5rem !important; letter-spacing: 2px !important; line-height: 1.2 !important; }
+    .hero-cta p { font-size: 0.6rem !important; display: none !important; } /* Ocultamos el subtitulo del CTA para limpiar espacio */
+
+    /* 4. BOTONES FLOTANTES (EL PROBLEMA PRINCIPAL) */
+    /* Usamos la clase general para el estilo visual */
     .menu-label {
-        font-size: 0.6rem;       /* Texto mucho más pequeño y elegante */
-        padding: 8px 16px;       /* Padding reducido a la mitad */
-        letter-spacing: 1px;     /* Menor espaciado entre letras */
-        border-radius: 8px;      /* Bordes acorde al tamaño */
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.6); /* Sombra ajustada */
-        width: auto;             /* Asegurar que no se estiren */
-        max-width: 40%;          /* Evitar que ocupen toda la pantalla */
-        white-space: nowrap;     /* Evitar que el texto se rompa en dos líneas */
+        font-size: 0.6rem !important;       
+        padding: 6px 12px !important;       
+        letter-spacing: 1px !important;     
+        border-radius: 6px !important;      
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.8) !important; 
+        width: auto !important;             
+        max-width: 45% !important;          
+        white-space: normal !important; /* Permitir que rompa en 2 líneas si es necesario */
+        text-align: center !important;
+        line-height: 1.1 !important;
+        background: rgba(0, 0, 0, 0.6) !important; /* Fondo más oscuro para leer sobre video */
+        backdrop-filter: blur(4px) !important;
     }
 
-    /* 2. Reajustar el borde animado (Serpiente dorada) para el nuevo tamaño */
-    .menu-label::after {
-        inset: 1px; /* Borde más fino para móvil */
-        border-radius: 6px;
-    }
+    /* Reducimos la serpiente dorada */
+    .menu-label::after { inset: 1px !important; }
 
-    /* 3. REUBICACIÓN ESTRATÉGICA (Crucial para Móvil) */
-    /* Como el video se recorta en vertical, acercamos los textos al centro */
+    /* 5. POSICIONAMIENTO FORZADO (IDs) */
+    /* Separamos los botones del centro para que no choquen con el título */
     
-    #text-yellow { 
-        top: 35%; 
-        right: 5%; /* Más pegado al borde derecho seguro */
-    }
-    
+    /* Arriba Izquierda (Cursos) */
     #text-blue { 
-        top: 25%; 
-        left: 5%; /* Más pegado al borde izquierdo seguro */
+        top: 15% !important; 
+        left: 5% !important; 
+        right: auto !important;
+        bottom: auto !important;
     }
     
-    #text-red { 
-        bottom: 30%; 
-        right: 5%; 
+    /* Arriba Derecha (Marketplace) */
+    #text-yellow { 
+        top: 25% !important; 
+        right: 5% !important; 
+        left: auto !important;
+        bottom: auto !important;
+        text-align: right !important;
     }
     
+    /* Abajo Izquierda (Comunidad) */
     #text-green { 
-        bottom: 25%; 
-        left: 5%; 
+        bottom: 25% !important; 
+        left: 5% !important; 
+        right: auto !important;
+        top: auto !important;
     }
     
-    /* Ajuste extra para el CTA central en móvil para que no choque */
-    .hero-cta h1 { font-size: 1.8rem; letter-spacing: 2px; }
-    .hero-cta p { font-size: 0.6rem; letter-spacing: 1px; }
-            
-          }
-
+    /* Abajo Derecha (Georeferenciación) */
+    #text-red { 
+        bottom: 15% !important; 
+        right: 5% !important; 
+        left: auto !important;
+        top: auto !important;
+        text-align: right !important;
+    }
+}
+        
 
          /* ========================================= */
         /* FUSION*/
