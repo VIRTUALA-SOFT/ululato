@@ -638,7 +638,43 @@
         }
 
         @media (max-width: 768px) {
-            .back-to-start-btn { top: 30px; right: 30px; font-size: 0.6rem; }
+            .back-to-start-btn {
+        top: 20px !important;       /* Más arriba para no estorbar */
+        right: 20px !important;     /* Más margen derecho para que no se corte */
+        
+        /* Truco para cambiar el texto largo por uno corto en CSS */
+        font-size: 0 !important;    /* Ocultamos el texto "VOLVER AL INICIO" */
+        
+        width: 40px !important;     /* Tamaño botón cuadrado */
+        height: 40px !important;
+        
+        border: 1px solid rgba(255, 255, 255, 0.4) !important;
+        border-radius: 50% !important; /* Lo hacemos redondo */
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        padding: 0 !important;
+        
+        /* Anclaje de hardware para evitar que se mueva al tocar cintas */
+        transform: translateZ(0) !important;
+        will-change: transform, opacity;
+        background: rgba(0, 0, 0, 0.3) !important; /* Fondo suave para contraste */
+        backdrop-filter: blur(4px) !important;
+    }
+
+    /* Dibujamos una flecha o texto corto "X" usando ::before */
+    .back-to-start-btn::before {
+        content: '✕';              /* Icono de cerrar/volver limpio */
+        font-size: 1.2rem !important; /* Tamaño visible */
+        color: var(--white) !important;
+        display: block !important;
+        line-height: 1 !important;
+    }
+
+    /* Eliminamos la línea inferior animada en móvil porque no hay hover */
+    .back-to-start-btn::after {
+        display: none !important;
+    }
         }
             
     </style>
