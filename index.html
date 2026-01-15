@@ -218,6 +218,53 @@
             .number-ring-svg { width: 35px; height: 35px; top: -5px; left: -5px; }
             .nav-number { font-size: 0.6rem; }
             .menu-link { gap: 10px; }
+
+            /* --- AJUSTES RESPONSIVOS PARA ETIQUETAS (Dentro del Media Query) --- */
+    
+    /* 1. Reducir tamaño y escala de las etiquetas */
+    .menu-label {
+        font-size: 0.6rem;       /* Texto mucho más pequeño y elegante */
+        padding: 8px 16px;       /* Padding reducido a la mitad */
+        letter-spacing: 1px;     /* Menor espaciado entre letras */
+        border-radius: 8px;      /* Bordes acorde al tamaño */
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.6); /* Sombra ajustada */
+        width: auto;             /* Asegurar que no se estiren */
+        max-width: 40%;          /* Evitar que ocupen toda la pantalla */
+        white-space: nowrap;     /* Evitar que el texto se rompa en dos líneas */
+    }
+
+    /* 2. Reajustar el borde animado (Serpiente dorada) para el nuevo tamaño */
+    .menu-label::after {
+        inset: 1px; /* Borde más fino para móvil */
+        border-radius: 6px;
+    }
+
+    /* 3. REUBICACIÓN ESTRATÉGICA (Crucial para Móvil) */
+    /* Como el video se recorta en vertical, acercamos los textos al centro */
+    
+    #text-yellow { 
+        top: 35%; 
+        right: 5%; /* Más pegado al borde derecho seguro */
+    }
+    
+    #text-blue { 
+        top: 25%; 
+        left: 5%; /* Más pegado al borde izquierdo seguro */
+    }
+    
+    #text-red { 
+        bottom: 30%; 
+        right: 5%; 
+    }
+    
+    #text-green { 
+        bottom: 25%; 
+        left: 5%; 
+    }
+    
+    /* Ajuste extra para el CTA central en móvil para que no choque */
+    .hero-cta h1 { font-size: 1.8rem; letter-spacing: 2px; }
+    .hero-cta p { font-size: 0.6rem; letter-spacing: 1px; }
             
           }
 
