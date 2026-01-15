@@ -32,8 +32,10 @@
             background-color: #000000 !important; /* Prioridad máxima al negro */
             color: var(--white); 
             font-family: var(--font-sans); 
-            overflow: hidden; 
-            height: 100vh; width: 100vw; 
+            overflow: hidden !important; 
+            height: 100vh !important; 
+            width: 100vw !important; 
+            position: fixed;
         }
         
         
@@ -638,55 +640,60 @@
         }
 
   @media (max-width: 768px){     
-     .back-to-start-btn {
-        /* POSICIÓN */
+     /* --- CORRECCIÓN DEFINITIVA BOTÓN VOLVER (MÓVIL) --- */
+    .back-to-start-btn {
+        /* POSICIÓN FIJA BLINDADA */
+        position: fixed !important; 
         top: 25px !important;       
-        right: 25px !important;     
-        z-index: 9999 !important;
+        right: 20px !important; /* Margen seguro del borde derecho */
+        left: auto !important;  /* Evita conflictos con el lado izquierdo */
+        
+        z-index: 99999 !important; /* Encima de absolutamente todo */
         
         /* DISEÑO */
         width: 44px !important;     
         height: 44px !important;
         border-radius: 50% !important; 
-        font-size: 0 !important; /* Ocultar texto */
+        font-size: 0 !important; 
         
-        /* ESTILO DORADO */
+        /* ESTILO */
         border: 1.5px solid #D4AF37 !important; 
-        background: rgba(0, 0, 0, 0.6) !important; 
-        backdrop-filter: blur(5px) !important;
+        background: rgba(0, 0, 0, 0.8) !important; /* Fondo más oscuro para tapar lo de atrás */
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
         
         display: flex !important;
         justify-content: center !important;
         align-items: center !important;
         padding: 0 !important;
         
-        /* RENDIMIENTO */
-        transform: translateZ(0) !important;
-        
-        /* --- ESTADO INICIAL (OCULTO) --- */
-        /* Aquí estaba el error: ahora lo forzamos a estar oculto por defecto */
+        /* ESTADO INICIAL */
         opacity: 0 !important;
         pointer-events: none !important;
         transition: opacity 0.5s ease !important;
+        
+        /* ELIMINAMOS TRANSFORMACIONES 3D EN EL CONTENEDOR PARA EVITAR EL BUG VISUAL */
+        transform: none !important; 
     }
 
-    /* --- ESTADO VISIBLE (SOLO CUANDO JS LO ACTIVA) --- */
+    /* ESTADO VISIBLE */
     .back-to-start-btn.visible {
         opacity: 1 !important;
         pointer-events: auto !important;
     }
 
-    /* LA FLECHA DORADA */
+    /* FLECHA */
     .back-to-start-btn::before {
         content: '' !important;
         display: block !important;
-        width: 10px !important;  
-        height: 10px !important;
+        width: 12px !important;  
+        height: 12px !important;
         border-top: 2px solid #D4AF37 !important;
         border-left: 2px solid #D4AF37 !important;
         transform: rotate(45deg) translate(2px, 2px) !important; 
+        margin-top: 2px !important; /* Ajuste óptico fino */
     }
-
+      
     /* LIMPIEZA */
     .back-to-start-btn::after {
         display: none !important;
