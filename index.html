@@ -734,7 +734,7 @@
                 
                 <!-- 3. VIDEO BACKGROUND -->
                <div class="video-container">
-    <video id="bg-video" loop muted playsinline preload="auto">
+    <video id="bg-video" loop muted playsinline preload="metadata">
        <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/ULULATOIA.mp4" type="video/mp4">
     </video>
     <div class="video-overlay"></div>
@@ -860,7 +860,7 @@
             <!-- CAPA WARP (PUENTE DE TRANSICIÓN) -->
             <!-- ========================================= -->
             <div id="warp-layer">                
-                <video id="warp-video" muted playsinline preload="auto" style="width: 100%; height: 100%; object-fit: cover;">
+                <video id="warp-video" muted playsinline preload="metadata" style="width: 100%; height: 100%; object-fit: cover;">
                     <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/transicion3.mp4" type="video/mp4">
                 </video>
             </div>
@@ -876,34 +876,34 @@
              <!-- CAPA DE VIDEOS -->
             <div class="video-container2">
                 <!-- 1. INTRO -->
-                <video id="vid-intro" class="active" muted playsinline preload="auto">
+                <video id="vid-intro" class="active" muted playsinline preload="metadata">
                     <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/Tejido.mp4" type="video/mp4">
                 </video>
             
                 <!-- 2. LOOP (Bucle de las cintas) -->
-                <video id="vid-loop" class="hidden" loop muted playsinline preload="auto">
+                <video id="vid-loop" class="hidden" loop muted playsinline preload="metadata">
                     <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/Tejido2.mp4" type="video/mp4">
                 </video>
             
                 <!-- === CAPA DE VIDEOS HOVER === -->
             <!-- Están ocultos (opacity: 0) y pausados por defecto -->
             
-            <video id="hover-yellow" class="video-layer hover-video"  muted playsinline preload="auto" data-loop-start="2" 
+            <video id="hover-yellow" class="video-layer hover-video"  muted playsinline preload="metadata" data-loop-start="2" 
                    data-loop-end="4">
                 <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/HoverCintaYellow.mp4" type="video/mp4">
             </video>
             
-            <video id="hover-blue" class="video-layer hover-video"  muted playsinline preload="auto" data-loop-start="3" 
+            <video id="hover-blue" class="video-layer hover-video"  muted playsinline preload="metadata" data-loop-start="3" 
                    data-loop-end="4">
                 <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/HoverCintaBlue.mp4" type="video/mp4">
             </video>
             
-            <video id="hover-red" class="video-layer hover-video"  muted playsinline preload="auto" data-loop-start="3" 
+            <video id="hover-red" class="video-layer hover-video"  muted playsinline preload="metadata" data-loop-start="3" 
                    data-loop-end="4">
                 <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/HoverCintaRed.mp4" type="video/mp4">
             </video>
             
-            <video id="hover-green" class="video-layer hover-video"  muted playsinline preload="auto" data-loop-start="3" 
+            <video id="hover-green" class="video-layer hover-video"  muted playsinline preload="metadata" data-loop-start="3" 
                    data-loop-end="4">
                 <source src="https://pub-8275440e24554b96ad7dd640df0866b9.r2.dev/videos/HoverCintaGreen.mp4" type="video/mp4">
             </video>
@@ -911,7 +911,7 @@
             
 
                 <!-- 4. TRANSICIÓN (Source dinámico) -->
-                <video id="vid-transition" class="hidden" muted playsinline>
+                <video id="vid-transition" class="hidden" muted playsinline preload="metadata">
                     <!-- Se inyecta por JS -->
                 </video>
           </div>
@@ -978,7 +978,8 @@
 // ====================================================================================================
 // SCRIPT ESCENA 1 (BLINDADO PARA IOS/SAFARI)
 // ====================================================================================================
-window.addEventListener('load', function() {
+//window.addEventListener('load', function() {
+document.addEventListener('DOMContentLoaded', function() {
     
     // --- ZONA DE SEGURIDAD: SI ALGO FALLA, ABRIR LA PÁGINA EN 5 SEGUNDOS ---
     setTimeout(() => {
@@ -1000,6 +1001,11 @@ window.addEventListener('load', function() {
     
     // ELEMENTOS DOM (Ahora estamos seguros de que existen)
     const video = document.getElementById('bg-video');
+    // 🔥 FORZAR CARGA EN SEGUNDO PLANO 🔥
+    if(video) {
+        video.preload = "auto"; // Cambiamos a auto vía JS una vez la web ya abrió
+        video.load();           // Ordenamos al navegador empezar a descargar YA
+    }
     const starCanvas = document.getElementById('loader-canvas');
     const starContainer = document.getElementById('loader-canvas-container');
     const preloader = document.getElementById('preloader');
@@ -1010,6 +1016,8 @@ window.addEventListener('load', function() {
     // --- 1. CURSOR ---
     const dot = document.querySelector('.cursor-dot');
     const circle = document.querySelector('.cursor-circle');
+
+    if (window.matchMedia("(pointer: fine)").matches) { 
     let cx = 0, cy = 0;
 
     if(dot && circle) {
@@ -1031,7 +1039,13 @@ window.addEventListener('load', function() {
             requestAnimationFrame(ac); 
         } 
         ac();
-    }
+      }
+   } else {
+    // Ocultar los elementos visuales del cursor en móvil por si acaso CSS no lo hizo
+    if(dot) dot.style.display = 'none';
+    if(circle) circle.style.display = 'none';
+   }
+    
 
     // --- CARGA DINÁMICA VIDEO ---
     if (video && video.dataset.src && !video.src) { video.src = video.dataset.src; video.load(); }
@@ -1142,7 +1156,9 @@ window.addEventListener('load', function() {
     // 4. TÚNEL WEBGL
     // ==========================================
     function initTunnelAnimation() {
-        const CONFIG = { duration: 4.5, fadeStart: 3.0, fadeEnd: 4.0, speed: 3500, innerRadius: 140, radiusVar: 220, count: 350, stretch: 12 };
+        // 🔥 Detecta móvil
+        const isMobile = window.innerWidth < 768;
+        const CONFIG = { duration: 4.5, fadeStart: 3.0, fadeEnd: 4.0, speed: 3500, innerRadius: 140, radiusVar: 220,  count: isMobile ? 190 : 350, stretch: 12 };
         
         try { if(video && !video.paused) video.pause(); video.currentTime = 0; } catch(e){}
 
@@ -1189,6 +1205,7 @@ window.addEventListener('load', function() {
 
             renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "high-performance" });
             renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); 
             renderer.setClearColor(0x000000, 0); 
             if(glContainer) glContainer.appendChild(renderer.domElement);
             
@@ -1240,7 +1257,27 @@ window.addEventListener('load', function() {
         }
         if(starContainer) starContainer.style.display = 'none'; 
         initNeuralVeil(); 
+
+         // 🔥 Pre-cargar el futuro (Warp y Escena 2) 🔥
+        // Esto ocurre YA cuando la web abrió, así que no bloquea el inicio.
+        setTimeout(() => {
+            console.log("Pre-cargando transición y Escena 2...");
+            
+            // 1. Cargamos el Warp (CRÍTICO para que el scroll sea fluido)
+            const warpVid = document.getElementById('warp-video');
+            if(warpVid) { warpVid.preload = "auto"; warpVid.load(); }
+
+            // 2. Cargamos el inicio de la siguiente escena
+            const introVid = document.getElementById('vid-intro');
+            if(introVid) { introVid.preload = "auto"; introVid.load(); }
+            
+        }, 2000); // Esperamos 2 segunditos después de abrir para no saturar
+        
+        initNeuralVeil(); 
+        
     }
+
+    
 
     // ==========================================
     // 5. CAPA NEURAL
