@@ -1217,7 +1217,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 scene.rotation.z += 0.003;
 
                 if (elapsed > CONFIG.fadeStart) {
-                    if (!hasTriggeredFade) { document.body.classList.add('reveal-video'); hasTriggeredFade = true; }
+                    if (!hasTriggeredFade) { 
+                        document.body.classList.add('reveal-video'); 
+                        hasTriggeredFade = true;
+                         // En cuanto el humo empieza a irse, empezamos a cargar el Warp silenciosamente
+                            const warpVid = document.getElementById('warp-video');
+                            if(warpVid) { 
+                                console.log("⚡ Pre-cargando Warp anticipadamente...");
+                                warpVid.preload = "auto"; 
+                                warpVid.load(); 
+                            }
+                         }
+                    
                     let progress = (elapsed - CONFIG.fadeStart) / (CONFIG.fadeEnd - CONFIG.fadeStart);
                     progress = Math.min(progress, 1);
                     clouds.forEach(c => { c.material.opacity = 1 * (1 - progress); c.scale.z = THREE.MathUtils.lerp(CONFIG.stretch, 1, progress); });
@@ -1564,13 +1575,27 @@ document.addEventListener('DOMContentLoaded', function() {
         const isScene1Active = sceneMaterial && sceneMaterial.classList.contains('active');
         const notWarping = !isWarping;
 
+        const warpVideo = document.getElementById('warp-video');
+        // readyState 3 significa HAVE_FUTURE_DATA (tiene suficiente para empezar sin trabarse)
+        // En móviles a veces es mejor ser permisivo con readyState >= 2, pero en PC usamos 3
+        const isVideoReady = warpVideo && warpVideo.readyState >= 3; 
+
+
         // 2. EJECUCIÓN
         if (scrollingDown && isScene1Active && notWarping && isIntroFinished) {
+         if (isVideoReady) {
             console.log("🚀 DESPEGUE: Iniciando Warp a Escena 2");
             isWarping = true; 
             initWarpSequence(); 
+          } else {
+            console.warn("⏳ Scroll detectado, pero el video Warp aún está cargando (Buffering). Esperando...");
+            // Opcional: Aquí se podría poner un cursor de "cargando" si se quisiera feedback visual
+            // Forzamos carga por si acaso
+            if(warpVideo) warpVideo.load();
         }
+      }        
     }
+    
 
     // --- DETECCIÓN PARA PC (MOUSE WHEEL) ---
     window.addEventListener('wheel', (e) => {
@@ -1602,49 +1627,70 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
     // --- SECUENCIA DE WARP (LÓGICA ORIGINAL INTACTA) ---
-    function initWarpSequence() {
+     function initWarpSequence() {
         const sceneMaterial = document.getElementById('scene-material');
         const sceneDigital = document.getElementById('scene-digital');
         const warpLayer = document.getElementById('warp-layer'); 
         const warpVideo = document.getElementById('warp-video');
         let hasFaded = false; 
         
+        // PREPARACIÓN
         warpLayer.style.pointerEvents = 'all'; 
         warpVideo.currentTime = 0;
-        warpVideo.muted = false; 
+        warpVideo.muted = false; // Intentamos con sonido primero
         
+        // INTENTO DE REPRODUCCIÓN PROTEGIDO
         const playPromise = warpVideo.play();
 
         if (playPromise !== undefined) {
             playPromise.then(() => {
+                // ÉXITO: El video arrancó
                 showWarpLayer();
             }).catch(error => {
-                console.log("Warp con sonido bloqueado. Intentando Muted.", error);
+                console.log("Autoplay con sonido bloqueado o interrumpido. Reintentando Muted.", error);
                 warpVideo.muted = true;
+                
+                // Reintento Muted
                 warpVideo.play().then(() => {
                     showWarpLayer();
                 }).catch(e => {
-                    console.error("Warp falló totalmente:", e);
-                    endWarpSequence();
+                    console.error("❌ ERROR CRÍTICO: Warp falló totalmente.", e);
+                    // IMPORTANTE: Liberamos el bloqueo para que no se congele la página
+                    isWarping = false; 
+                    warpLayer.style.pointerEvents = 'none';
                 });
             });
         }
 
-        function showWarpLayer() {
+
+          function showWarpLayer() {
+            // PAUSAR EL FONDO PARA AHORRAR RECURSOS (Importante para fluidez)
+            const bgVideo = document.getElementById('bg-video');
+            if(bgVideo) bgVideo.pause();
+
             const tl = gsap.timeline();
-            tl.to("#scene-material", { scale: 1.5, opacity: 0, duration: 1.2, ease: "power3.in" }, 0);
-            tl.to(warpLayer, { opacity: 1, duration: 1.5, ease: "power2.out" }, 0.1); 
+            // Aceleramos un poco la animación para que se sienta más "responsive"
+            tl.to("#scene-material", { scale: 1.5, opacity: 0, duration: 1.0, ease: "power3.in" }, 0);
+            tl.to(warpLayer, { opacity: 1, duration: 0.5, ease: "power2.out" }, 0.1); // Fade in más rápido
 
             warpVideo.addEventListener('timeupdate', checkFadeOut);
-            setTimeout(() => { swapScenes(); }, 1000); 
+            
+            // Failsafe: Si el evento timeupdate falla, forzar el cambio a los 4 segundos
+            setTimeout(() => { if(!hasFaded) checkFadeOut(true); }, 4000); 
         }
 
-        function checkFadeOut() {
-            if (!hasFaded && warpVideo.currentTime >= 2) {
+       function checkFadeOut(force = false) {
+            // Chequeamos si el video va por la mitad (aprox 2 segs) o si forzamos
+            if (!hasFaded && (force || warpVideo.currentTime >= 2)) {
                 hasFaded = true;
+                
+                // Cambiar escenas
+                swapScenes();
+
+                // Fade out del warp layer
                 gsap.to(warpLayer, { 
                     opacity: 0, 
-                    duration: 2.0, 
+                    duration: 1.5, 
                     ease: "power2.inOut",
                     onComplete: () => { finishSequence(); }
                 });
@@ -1654,7 +1700,10 @@ document.addEventListener('DOMContentLoaded', function() {
         function swapScenes() {
              sceneMaterial.classList.remove('active'); sceneMaterial.classList.add('hidden');
              sceneDigital.classList.remove('hidden'); sceneDigital.classList.add('active');
+             
+             // Activar Escena 2
              if (typeof window.activarEscena2 === 'function') window.activarEscena2();
+             
              const backBtn = document.getElementById('back-to-start');
              if(backBtn) backBtn.classList.add('visible');
         }
@@ -1666,14 +1715,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         function finishSequence() {
-            swapScenes(); 
             warpLayer.style.pointerEvents = 'none'; 
-            isWarping = false; 
+            isWarping = false; // LIBERAMOS EL BLOQUEO AQUÍ
             warpVideo.pause();
             warpVideo.removeEventListener('timeupdate', checkFadeOut);
         }
 
-        warpVideo.onended = endWarpSequence;
+        //warpVideo.onended = endWarpSequence;
     }
 
     // --- LÓGICA DE VOLVER AL INICIO (ORIGINAL INTACTA) ---
