@@ -1119,13 +1119,24 @@ document.addEventListener('DOMContentLoaded', function() {
     function simLoad() {
         if (!loadText) return; // Si no existe el elemento, salir para no romper JS
 
-        let increment = Math.random() * 0.8; // Un poco más rápido
+        // Asegura que llegue a 100% en aprox 1.5 segundos incluso en móviles lentos.
+        let increment = Math.random() * 2.5 + 0.5; // Un poco más rápido
         loadProgress += increment;
         
-        if (loadProgress >= 10) {
-            loadProgress = 10;
+        if (loadProgress >= 100) {
+            loadProgress = 100;
+
+           // Actualizamos visualmente al 100% antes de cerrar
+            if(loadText) loadText.innerText = '100%';
+            if(loadFill) loadFill.style.width = '100%';
+            
             isWarping = true;
             if(preloader) preloader.classList.add('text-fade-out');
+
+             // Esperamos 0.5s a que termine la animación CSS de opacidad y apagamos el preloader.
+            setTimeout(() => {
+                if(preloader) preloader.style.display = 'none';
+            }, 600);
             
             // INTENTAR INICIAR TÚNEL
             try {
@@ -1142,6 +1153,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             // Actualizar UI con chequeos de seguridad
             if(loadText) loadText.innerText = Math.floor(loadProgress) + '%';
+            // Ajustamos la barra para que llene al llegar a 100
             if(loadWrap) loadWrap.style.width = Math.min(loadProgress * 3, 250) + 'px'; 
             if(loadFill) loadFill.style.width = loadProgress + '%';
             
