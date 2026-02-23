@@ -455,6 +455,11 @@
     </div>
 
     <script>
+        // Carga el sonido
+        const sendSound = new Audio('https://cdn2.ululato.com/videos/ulular.mpeg');
+
+        const receiveSound = new Audio('https://cdn2.ululato.com/videos/ulular.mpeg');
+        
         // --- 0. TRANSICIÓN A PÁGINA PRINCIPAL ---
         function goToHome() {
             document.body.classList.add('fade-out');
@@ -572,6 +577,7 @@
 
             if(!text) return;
             addMsg(text, 'out');
+            sendSound.play().catch(e => console.log("Error al reproducir:", e));
             input.value = '';
             iconSend.innerText = 'mic';
             
@@ -581,6 +587,16 @@
             setTimeout(() => botReply(reply), 1500);
         });
 
+        function botReply(text) {
+            statusText.innerText = "Escribiendo...";
+            setTimeout(() => {
+                statusText.innerText = "En línea";
+                addMsg(text, 'in');
+                // Suena al recibir
+                receiveSound.play().catch(e => console.log(e));
+            }, 1500);
+         }
+        
         function addMsg(text, type) {
             const div = document.createElement('div');
             const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
