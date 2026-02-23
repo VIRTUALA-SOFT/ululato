@@ -422,6 +422,10 @@
             <footer class="chat-footer">
                 <div class="footer-btn"><span class="material-symbols-rounded">sentiment_satisfied</span></div>
                 <div class="footer-btn" id="btnAttach"><span class="material-symbols-rounded" style="transform: rotate(45deg);">attach_file</span></div>
+
+                <div class="footer-btn" id="btnManualSound">
+                  <span class="material-symbols-rounded">Ulular</span>
+                 </div>
                 
                 <div class="input-bar">
                     <input type="text" id="msgInput" placeholder="Escribe un mensaje" autocomplete="off">
@@ -628,6 +632,20 @@
         function openCall(type) { document.getElementById('overlayCall').classList.add('active'); }
         function openCamera() { document.getElementById('overlayCamera').classList.add('active'); attachMenu.classList.remove('open'); }
         function closeOverlay(id) { document.getElementById(id).classList.remove('active'); }
+
+        const btnManualSound = document.getElementById('btnManualSound');
+
+        btnManualSound.addEventListener('click', () => {
+            // Usamos el objeto sendSound que ya tienes definido arriba
+            sendSound.currentTime = 0; // Reinicia el sonido por si se pulsa varias veces rápido
+            sendSound.play().catch(e => console.log("Error al reproducir sonido manual:", e));
+            
+            // Efecto visual opcional: que el icono brille un momento al pulsarlo
+            btnManualSound.style.color = "var(--gold)";
+            setTimeout(() => {
+                btnManualSound.style.color = "";
+            }, 300);
+        });
 
     </script>
 </body>
